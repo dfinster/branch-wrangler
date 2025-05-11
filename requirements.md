@@ -1,16 +1,11 @@
 ## Branch Wrangler — Requirements, Terminology, and Documentation Blueprint
 
-Below is a complete starter‑pack you can drop into a repo (or paste back into ChatGPT) to drive the actual coding effort. It contains:
+Below is a complete description of a new software project. It contains:
 
-1. **Canonical terminology** for every branch situation we care about.
+1. **Branch States Taxonomy** for every branch situation we care about.
 2. **Functional & non‑functional requirements** written in concise, testable language.
 3. **UI/UX specification** for a full‑screen terminal app.
 4. **Additional “don’t‑forget” requirements** that often slip through the cracks.
-5. **Ready‑to‑commit files** ‑ a `README.md` outline and a **User Manual** skeleton.
-
-You can copy each section directly or ask ChatGPT to drill deeper into any part.
-
----
 
 ### Branch States Taxonomy
 
@@ -40,194 +35,99 @@ You can copy each section directly or ask ChatGPT to drill deeper into any part.
 
 ### 2. Functional Requirements (FR)
 
-| ID                                              | Requirement                                                                                                                                                                                                                                                                            |
-|-------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **FR‑1**                                        | *Branch discovery*: Enumerate every local branch, gather metadata (last commit date, author, ahead/behind counts, tracking remote).                                                                                                                                                    |
-| **FR‑2**                                        | *GitHub reconciliation*: For branches with a configured upstream on GitHub, query the GitHub API to find an associated PR and its state (draft, open, merged, closed‑unmerged). Handle API‑rate limits with exponential back‑off and local caching (TTL configurable, default 15 min). |
-| **FR‑3**                                        | *State classification*: Map each branch into exactly **one** `BranchState` (see §1).                                                                                                                                                                                                   |
-| **FR‑4**                                        | *Interactive TUI*: Launches full‑screen; left panel = branch list with color‑coded state badges; right panel = details (commit history preview, PR link, last activity).                                                                                                               |
-| **FR‑5**                                        | *Filtering & search*: Toggle by state, text‑search by branch name (fuzzy), sort by last activity date.                                                                                                                                                                                 |
-| **FR‑6**                                        | *Bulk actions*: Multi‑select branches; supported actions per state:\\                                                                                                                                                                                                                  |
-| - `STALE_LOCAL` → *Delete* (default “d” key).   |                                                                                                                                                                                                                                                                                        |
-| - Any → *Checkout* (`Enter`).                   |                                                                                                                                                                                                                                                                                        |
-| - Any with remote → *Open PR in browser* (`o`). |                                                                                                                                                                                                                                                                                        |
-| - Any ahead/behind → *Rebase onto base* (`r`).  |                                                                                                                                                                                                                                                                                        |
-| **FR‑7**                                        | *Safety guard*: Deletion is disabled unless branch is in `STALE_LOCAL` *or* user toggles *force* mode (`F`). Always prompt with a dry‑run preview (`git branch -d` vs `-D`).                                                                                                           |
-| **FR‑8**                                        | *Detached HEAD handling*: If `HEAD` detached, show modal explaining risks and quick keys to checkout `main`, `develop`, or stay.                                                                                                                                                       |
-| **FR‑9**                                        | *Config file*: `$XDG_CONFIG_HOME/branch‑wrangler/config.yml` (or `%APPDATA%` on Windows) for overrides: default base branches list, color theme, keybindings, GitHub token path.                                                                                                       |
-| **FR‑10**                                       | *Headless mode*: `branch‑wrangler --list --json` prints machine‑readable state info for scripting/CI; `--delete-stale --dry-run` CLI flags replicate TUI actions without UI.                                                                                                           |
-| **FR‑11**                                       | *Cross‑platform binaries*: Official releases for **macOS**, **Linux**, **Windows** built via `goreleaser`, signed where supported.                                                                                                                                                     |
 
----
+| ID     | Requirement                                                                                                                                                                                                                                                                                                                                                      |
+|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| FR-1   | *Branch discovery*: Enumerate every local branch, gather metadata (last commit date, author, ahead/behind counts, tracking remote).                                                                                                                                                                                                                              |
+| FR-2   | *GitHub reconciliation*: For branches with a configured upstream on GitHub, query the GitHub API to find an associated PR and its state (draft, open, merged, closed-unmerged). Handle API-rate limits with exponential back-off and local caching (TTL configurable, default 15 min).                                                                           |
+| FR-3   | *State classification*: Map each branch into exactly **one** `BranchState` (see Branch States Taxonomy).                                                                                                                                                                                                                                                         |
+| FR-4   | *Interactive TUI*: Launches full-screen; left panel = branch list with color-coded state badges; right panel = details (commit history preview, PR link, last activity).                                                                                                                                                                                         |
+| FR-5   | *Filtering & search*: Toggle by state, text-search by branch name (fuzzy), sort by last activity date.                                                                                                                                                                                                                                                           |
+| FR-6   | *Bulk actions*: Multi-select branches by state or individually; If all selected branches are in the same state, enable *Delete* (“d” key) for all selected if `STALE_LOCAL` state, or allow *Force delete* (default "F" key, with confirmation explaining the current branch state) in other states                                                              |
+| FR-6.1 | *Individual actions*: When a single branch only is selected, allow these actions: <br/ > - For any branch, even if a local does not exist: *Checkout* (`c`);<br /> - For any branch with a remote: *Open PR in browser* (`o`).                                                                                                                                   |
+| FR-7   | *Safety guard*: Deletion is disabled unless branch is in `STALE_LOCAL` *or* user toggles *force* mode (`F`). Always prompt with a dry-run preview (`git branch -d` vs `-D`).                                                                                                                                                                                     |
+| FR-8   | *Detached HEAD handling*: If `HEAD` detached, show modal explaining risks and quick keys to checkout `main`, `develop`, or stay.                                                                                                                                                                                                                                 |
+| FR-9   | *Config file*: `$XDG_CONFIG_HOME/branch-wrangler/config.yml` (or `%APPDATA%` on Windows) for overrides: default base branches list, color theme, keybindings, GitHub token path.                                                                                                                                                                                 |
+| FR-10  | *Headless mode*: See full list at (Headless mode (CLI) options)                                                                                                                                                                                                                                                                                                    |
+| FR-11  | *Cross-platform binaries*: Official releases for **macOS**, **Linux**, **Windows** built via `goreleaser`, signed where supported.                                                                                                                                                                                                                               |
+| FR-12  | *Token precedence*: On startup, the app shall first check the `GITHUB_TOKEN` environment variable.                                                                                                                                                                                                                                                               |
+| FR-13  | *Token precedence*: If unset, it shall check the config file at `$XDG_CONFIG_HOME/branch-wrangler/config.yml` (fallback to `~/.config/branch-wrangler/config.yml`), reading a `token:` field.                                                                                                                                                                    |
+| FR-14  | *Token precedence*: If still unauthenticated, it shall enter _OAuth Device Flow_.                                                                                                                                                                                                                                                                                  |
+| FR-15  | *Config file format*: The config file shall be valid YAML and support a root-level `token` key whose value is the GitHub access token.                                                                                                                                                                                                                           |
+| FR-16  | *OAuth Device Flow*: The app shall implement GitHub’s OAuth Device Flow:<br>1. POST to `/login/device/code` with the client ID;<br>2. Display the returned `user_code` and verification URI to the user;<br>3. Poll `/login/oauth/access_token` until authorization is granted or expired;<br>4. Persist the received token into the config file under `token:`. |
+| FR-17  | *OAuth Device Flow*: If the device flow fails (e.g. timeout, network error), the app shall display a clear error and exit non-zero.                                                                                                                                                                                                                              |
+| FR-18  | *Token storage & security*: Tokens written to the config file shall overwrite any previous `token:` entry. It shall preserve the previous token value as a comment. If a previous comment exists, it shall make a versioned comment to preserve all previous token history.                                                                                                                                                                                                                                                       |
+| FR-19  | *Token storage & security*: The app shall set file permissions on the config directory/files to user-only read/write where the OS supports it (e.g. `chmod 600` on Unix).                                                                                                                                                                                        |
+| FR-20  | *Token validation*: After loading a token (from env or config), the app shall make a lightweight “ping” (e.g. `GET /rate_limit`) to verify it’s valid.                                                                                                                                                                                                           |
+| FR-21  | *Token validation*: If validation fails (expired/revoked), the app shall issue an error message indicating which type of token (env or config) failed and offer instructions to correct the error, including an option to re-login with OAuth.                                                                                                                                                                                                   |
+| FR-22  | *CLI & UX*: Provide a `branch-wrangler --login` command to force an interactive authentication.                                                                                                                                                                                                                                                                    |
+| FR-23  | *CLI & UX*: Provide a `branch-wrangler --logout` command that clears any stored token from the config file.                                                                                                                                                                                                                                                        |
+| FR-24  | *CLI & UX*: In verbose or help output, document the three authentication methods and advise users on PAT scopes (e.g. `repo`, `workflow`).                                                                                                                                                                                                                       |
+
 
 ### 3. Non‑Functional Requirements (NFR)
 
-|  Area         | Requirement                                                                                                             |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Area          | Requirement                                                                                                             |
+|---------------|-------------------------------------------------------------------------------------------------------------------------|
 | Performance   | Scan & classify ≤ 200 branches in < 2 s on a 2020 laptop; GitHub API calls concurrent but ≤ 5 in‑flight to avoid abuse. |
 | Reliability   | Unit + integration tests; mocked GitHub API; e2e TUI tests via `expect` harness; 90 % line coverage.                    |
-| Portability   | No CGO by default; only depend on stdlib + a single TUI lib (`tview`, `bubbletea`, or similar).                         |
-| Security      | Require GitHub token via env `GITHUB_TOKEN` or keychain; never log it; HTTPS only.                                      |
+| Portability   | No CGO by default; only depend on stdlib + a `tview` TUI lib                                                            |
+| Security      | Use the GitHub token specified in `~/.gitconfig` or `~/.github-token`; never log the token; HTTPS enforced.             |
 | Accessibility | All commands operable via keyboard; color schemes pass WCAG AA contrast; optional high‑contrast theme.                  |
 | Observability | Verbose logs (`--log-level debug`) and structured JSON logs (`--log-format json`).                                      |
 | Extensibility | Plugin hooks (Go `plugin` build tag): custom state calculators, extra actions.                                          |
 | Documentation | Every exported function has GoDoc; `make docs` runs `godoc -http`; README quick‑start lines < 80 chars.                 |
 
----
 
 ### 4. UI/UX Specification (TUI)
 
-```
-┌ Branch Wrangler ───────────────────────────── [q] Quit ─┐
-│ State  │ Branch               │ Last Commit  │  Behind  │
-│────────┼──────────────────────┼──────────────┼──────────│
-│ 🗑 Safe │ feature/login-clean  │ 2025‑05‑09   │ 0        │
-│ 💬 PR   │ feat/new‑api‑auth    │ 2025‑05‑10   │ ↑2 ↓0    │
-│ ⌛ Draft│ wip/upload‑refactor   │ 2025‑05‑07   │ 0        │
-│ 🏠 Local│ tmp/idea‑scratch     │ 2025‑05‑11   │ 0        │
-└──────────────────────────────────────────────────────────┘
-Details Pane → shows `git log --oneline -5`, PR URL, comment count.
-```
+The user interface is created using the `tview` TUI library and consists of two main panes:
 
-**Key Map** (configurable):
+[Please describe the TUI details here]
 
-| Key            | Action                    |
-| -------------- | ------------------------- |
-| ↑/↓, PgUp/PgDn | Move cursor               |
-| Space          | Toggle select             |
-|  f             | Cycle state filter        |
-|  /             | Fuzzy search              |
-| d              | Delete selected (if safe) |
-| F              | Toggle *force delete*     |
-| o              | Open PR in \$BROWSER      |
-| Enter          | Checkout branch           |
-| r              | Rebase onto base          |
-| ?              | Help overlay              |
+#### 4.1 Key Map:
 
----
+| Key            | Action                                                                         |
+|----------------|--------------------------------------------------------------------------------|
+| ↑/↓, PgUp/PgDn | Move cursor                                                                    |
+| Space          | Toggle select                                                                  |
+| a              | Show all branches in all states                                                |
+| f              | Filter branches to show only one selected state                                |
+| /              | Fuzzy search for branch name                                                   |
+| d              | Delete selected (if safe)                                                      |
+| F              | Toggle *force delete* (with confirmation explaining the current branch state)  |
+| u              | Switch to Undo mode and show cached reflog. Allow restore of deleted branches. |
+| o              | Open PR in \$BROWSER                                                           |
+| c              | Checkout branch                                                                |
+| ?              | Help overlay                                                                   |
+
 
 ### 5. Often‑missed but Valuable Requirements
 
-* **Dry‑run *by default*** (must be opt‑in to “live” destructive mode).
-* **Batch undo**: After a delete operation, keep a temp reflog of refs for N minutes and offer “u” to restore.
-* **Auto‑update**: `--self‑update` flag (download from GitHub Releases).
-* **CI safe‑guard**: Detect if running in CI (env `CI=true`); auto headless mode.
-* **Telemetry opt‑in** for anonymous feature usage (helps prioritise).
-* **Shell‑completion** generators (`branch‑wrangler completion bash|zsh|fish`).
+- **Dry‑run _by default_ in TUI mode**: must manually activate destructive mode.
+- **Undo**: After a delete operation, keep a cached reflog of refs from last session and allow restore.
 
----
+### Headless mode (CLI) options
 
-## 6. `README.md` Starter Template
+- `branch-wrangler --help` returns help text.
+- `branch-wrangler --version` returns version info.
+- `branch-wrangler --undo` Read the cached reflog and restore the deleted branches.
+- `branch-wrangler --list` returns headless human-readable output.
+- `branch-wrangler --log` returns headless verbose debug output.
+- `branch-wrangler --json` returns headless verbose debug output in json format.
+- `branch-wrangler --github-token-path` to override the default token location.
+- `branch-wrangler --base-branches` to override the default base branches list.
+- `branch-wrangler --config [path to file]` Override the default configuration file location (`$XDG_CONFIG_HOME/branch‑wrangler/config.yml` or `%APPDATA%` on Windows)
+- `branch-wrangler --delete-stale` headless cleanup, deletes branches that are safe to delete.
+- `branch-wrangler --delete-stale --dry-run` headless cleanup preview, prints branches that would be deleted.
+- `branch‑wrangler --completion bash|zsh|fish` Shell‑completion generators
 
-````markdown
-# Branch Wrangler 🏇🗑
-
-**Tame your local Git branches**.
-Scan, browse, and clean stale branches with a full‑screen terminal UI.
-
-## Features
-
-* Classifies every branch (local‑only, draft PR, merged & stale, …)
-* Links directly to GitHub pull requests
-* Bulk delete merged branches safely (dry‑run by default)
-* Runs everywhere – single static Go binary
-
-## Installation
-
-```bash
-brew install branch-wrangler   # macOS (Tap coming soon)
-scoop install branch-wrangler  # Windows
-curl -sSL https://github.com/…/branch‑wrangler/releases/download/vX.Y.Z/… -o bw
-chmod +x bw && sudo mv bw /usr/local/bin
-```
-
-## Quick Start
-
-```bash
-branch-wrangler            # launch TUI
-branch-wrangler --list     # headless JSON summary
-branch-wrangler --delete-stale --dry-run  # preview cleanup
-```
-
-## Configuration (`~/.config/branch-wrangler/config.yml`)
+## Configuration file (`~/.config/branch-wrangler/config.yml`)
 
 ```yaml
 base_branches: [main, develop]
-theme: Dracula
 github_token_path: ~/.github-token
 ```
-
-## Keybindings
-
-| Key     | Description            |
-| ------- | ---------------------- |
-| `↑` `↓` | Move                   |
-| `Space` | Select                 |
-| `d`     | Delete selected (safe) |
-| `F`     | Force delete           |
-| `o`     | Open PR                |
-| `?`     | Help                   |
-
-*(See full list in the User Manual.)*
-
-## Screenshots
-
-<img src="docs/screenshot-branches.png" width="650">
-
-## Roadmap
-
-- [ ] Undo stack
-- [ ] GitLab / Azure DevOps support
-- [ ] Plugin API
-
-## Contributing
-
-1. Fork + `git clone`
-2. `make setup && make test`
-3. Send a PR ✔️
-
-## License
-
-Proprietary
-
----
-
-## 7. User Manual Skeleton (docs/user‑manual.md)
-
-1. **Introduction**
-   *What is Branch Wrangler, typical workflow, supported platforms.*
-
-2. **Installation**
-   Homebrew, Scoop, manual, building from source.
-
-3. **Launching the Application**
-   *TUI mode vs headless CLI flags.*
-
-4. **Understanding Branch States**
-   Table mapping icons → definitions (reuse §1).
-
-5. **Navigating the Interface**
-   Full keybinding reference, search, filters.
-
-6. **Performing Actions**
-   Deleting branches (safe vs force), opening PRs, rebasing, undo.
-
-7. **Configuration File Reference**
-   Every YAML key, defaults, env vars.
-
-8. **Authentication**
-   Setting a GitHub token, scopes required (`repo:status read:org`).
-
-9. **Scripting & Automation**
-   Examples using `--json` to prune branches in CI.
-
-10. **Troubleshooting & FAQ**
-    Rate‑limit errors, detached HEAD, “branch already deleted” warnings.
-
-11. **Contributing & Support**
-    Issue templates, code style, contact info.
-
----
 
 ### Next Steps
 
