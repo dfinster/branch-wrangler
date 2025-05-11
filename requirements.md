@@ -12,19 +12,23 @@ You can copy each section directly or ask ChatGPT to drill deeper into any part.
 
 ---
 
-### 1. Terminology Cheat‑Sheet (“Branch States” taxonomy)
+### Branch States Taxonomy
 
-| Internal ID                | Display Name (UI)         | Short Definition                                                                                  | Detection Logic (Git + GitHub)                                                  |
-|----------------------------|---------------------------|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| **LOCAL\_ONLY**            | *Local‑Only*              | Branch exists only on the developer’s machine.                                                    | `git rev-parse --verify origin/<branch>` fails.                                 |
-| **UNPUSHED\_AHEAD**        | *Ahead of Remote*         | Branch tracks `origin/<branch>` but local has commits remote lacks.                               | `git status --branch --porcelain`; count of `ahead` ≠ 0.                        |
-| **DIVERGED**               | *Diverged*                | Local & remote both have exclusive commits.                                                       | `ahead` > 0 **and** `behind` > 0.                                               |
-| **DRAFT\_PR**              | *Draft PR*                | Linked GitHub PR is in *draft* state.                                                             | GitHub REST v3 `pulls` API → `"draft": true`.                                   |
-| **OPEN\_PR**               | *Open PR*                 | Linked PR is open and ready for review.                                                           | GitHub API → `"state": "open"` and `draft` false.                               |
-| **MERGED\_REMOTE\_EXISTS** | *Merged (remote kept)*    | PR merged **but** remote branch not yet auto‑deleted.                                             | PR `"merged": true` **and** branch still present on GitHub.                     |
-| **STALE\_LOCAL**           | *Merged (remote deleted)* | PR merged, remote branch is gone, local branch redundant → safe to delete.                        | PR `"merged": true` **and** remote branch lookup fails.                         |
-| **FULLY\_MERGED\_BASE**    | *Fully Merged Into Base*  | All commits reachable from the branch are already in `main`/`develop` regardless of PR existence. | `git merge-base --is-ancestor <branch> <base>` exit 0.                          |
-| **DETACHED\_HEAD**         | —                         | User’s `HEAD` is detached (not a branch).                                                         | `git symbolic-ref -q HEAD` fails. (Shown as a status banner, not a branch row.) |
+| Internal ID               | Display Name (UI)         | Short Definition                                                                                          | Detection Logic                                                                       |
+|---------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| **DETACHED_HEAD**         | —                         | `HEAD` is not on any branch.                                                                              | `git symbolic-ref -q HEAD` fails.                                                     |
+| **NO_UPSTREAM**           | *No Upstream*             | Branch exists only locally and has never been pushed (no tracking set).                                   | `git rev-parse --abbrev-ref --symbolic-full-name @{u}` fails.                         |
+| **ORPHAN_REMOTE_DELETED** | *Orphan (remote deleted)* | Branch was pushed at one point but its remote was removed (no PR or PR unmerged).                         | `git rev-parse --verify origin/<branch>` fails **and** upstream is configured.        |
+| **IN_SYNC**               | *In Sync with Remote*     | Local and `origin/<branch>` point to the same commit.                                                     | `git status --branch --porcelain` shows `ahead=0` **and** `behind=0`.                 |
+| **UNPUSHED_AHEAD**        | *Ahead of Remote*         | Local has commits that aren’t on `origin/<branch>`.                                                       | `git status --branch --porcelain`; `ahead` ≠ 0 **and** `behind` = 0.                  |
+| **BEHIND_REMOTE**         | *Behind Remote*           | Remote has commits that local branch doesn’t.                                                             | `git status --branch --porcelain`; `behind` ≠ 0 **and** `ahead` = 0.                  |
+| **DIVERGED**              | *Diverged from Remote*    | Local and remote each have unique commits.                                                                | `git status --branch --porcelain`; `ahead` > 0 **and** `behind` > 0.                  |
+| **DRAFT_PR**              | *Draft PR*                | A GitHub PR exists for the branch, but it’s still in draft.                                               | GitHub REST API `GET /repos/:owner/:repo/pulls` → `"draft": true`.                    |
+| **OPEN_PR**               | *Open PR*                 | A GitHub PR exists and is open (not a draft), awaiting review.                                            | GitHub API → `"state": "open"` **and** `"draft": false`.                              |
+| **CLOSED_PR**             | *Closed PR*               | A PR was created but closed without being merged.                                                         | GitHub API → `"state": "closed"` **and** `"merged": false`.                           |
+| **MERGED_REMOTE_EXISTS**  | *Merged (remote kept)*    | PR was merged on GitHub, but the remote branch still exists (auto-delete off).                            | GitHub API → `"merged": true` **and** remote branch lookup succeeds.                  |
+| **STALE_LOCAL**           | *Merged (remote deleted)* | PR merged and GitHub auto-deleted the branch—safe to delete locally.                                      | GitHub API → `"merged": true` **and** `git rev-parse --verify origin/<branch>` fails. |
+| **FULLY_MERGED_BASE**     | *Fully Merged Into Base*  | All commits from this branch are already in the base branch (`main`/`develop`), regardless of PR history. | `git merge-base --is-ancestor <branch> <base>` exits 0.                               |
 
 *Why it matters* — these labels appear in the UI’s sidebar filters and in log / JSON outputs, so keep them stable.
 
