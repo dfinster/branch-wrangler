@@ -1,0 +1,16 @@
+# Binaries
+/bin/
+/*.exe
+
+# Build artifacts
+*.cache
+*.log
+
+# Go
+/vendor/
+/**/vendor/
+*.test
+
+# IDEs
+*.idea/
+/.vscode/
