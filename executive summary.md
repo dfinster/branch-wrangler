@@ -6,7 +6,7 @@
 
 #### Business Context & Problem
 
-Development teams that work with **short‑lived feature branches** routinely accumulate dozens—or hundreds—of stale local branches. While GitHub automatically deletes a branch once its pull‑request (PR) is merged, **each developer’s workstation retains the branch forever**. This leads to:
+Development teams that work with **short‑lived feature branches** routinely accumulate dozens—or hundreds—of stale local branches. While GitHub can automatically delete a branch once its pull‑request (PR) is merged, a common pattern is for **each developer’s workstation to retain the branch until manually deleted**. This leads to:
 
 * Cluttered `git branch` outputs that slow day‑to‑day workflows.
 * Accidental check‑outs of obsolete code, causing wasted debugging time.
@@ -26,8 +26,8 @@ Development teams that work with **short‑lived feature branches** routinely ac
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | **Accurate State Detection**  | Automatically identify more than a dozen distinct branch states (e.g., Draft PR, Ahead of Remote, Fully Merged, Stale Local, etc.).                       |
 | **Actionable UI**             | Let users filter, search, and bulk‑delete branches that are provably safe to remove, while offering jump‑to‑PR and checkout shortcuts. |
-| **Safety & Auditability**     | Run in *dry‑run* mode by default, provide undo for recent deletions, and expose a headless JSON interface for CI or scripting.         |
-| **Portability & Performance** | Ship as a single static Go binary with <2 s scan time for 200 branches on commodity laptops, no external services beyond GitHub’s API. |
+| **Safety & Auditability**     | Run in *dry‑run* mode by default, provide undo for recent deletions, and expose a headless interface for CI or scripting.         |
+| **Portability & Performance** | Ship as a single static Go binary with <2 s scan time for 200 branches on commodity laptops, no external services required beyond GitHub’s API. |
 
 ---
 
@@ -37,9 +37,9 @@ Development teams that work with **short‑lived feature branches** routinely ac
 2. **GitHub Reconciliation** – For branches with an upstream, query GitHub’s REST API to attach PR numbers, URLs, draft/open/merged states, and merge dates—cached locally for 15 minutes with concurrency limits.
 3. **State Classification** – Map each branch to exactly one of the canonical *BranchStates* (e.g., `STALE_LOCAL`, `OPEN_PR`, `LOCAL_ONLY`).
 4. **Interactive TUI** – Split‑pane interface: list‑view on the left, details pane on the right; keyboard‑only navigation; configurable color themes.
-5. **Bulk Actions & Shortcuts** – Delete safe branches (`d`), force‑delete (`F`), open PR in web browser (`o`), checkout (`Enter`), rebase onto base branch (`r`).
-6. **Detached‑HEAD Guard** – Detect detached `HEAD`; present a modal prompting checkout of `main`, `develop`, or continue at user’s own risk.
-7. **Config & Extensibility** – YAML config under XDG (`~/.config/branch‑wrangler`); plugin hooks for custom state analyzers; CLI flags for headless operation.
+5. **Bulk Actions & Shortcuts** – Delete safe branches (`d`), force‑delete selected branches (`F`), open PR in web browser (`o`), checkout branch (`c`), undo (`u`).
+6. **Detached‑HEAD Guard** – Detect detached `HEAD`; present a modal prompting checkout of the default branch at GitHub (usually `main` or `develop`), or continue at user’s own risk.
+7. **Config & Extensibility** – YAML config under XDG (`~/.config/branch‑wrangler`); CLI flags for headless operation.
 
 ---
 
@@ -49,17 +49,8 @@ Development teams that work with **short‑lived feature branches** routinely ac
 * **Reliability:** 90 % test coverage, mocked GitHub calls, end‑to‑end TUI tests.
 * **Security:** OAuth token via env or keychain; never logged; HTTPS enforced.
 * **Accessibility:** Full keyboard control, WCAG‑AA contrast defaults, high‑contrast theme.
-* **Portability:** No CGO; official binaries for macOS, Linux, Windows via GoReleaser.
+* **Portability:** No CGO; official binaries for macOS, Linux, Windows.
 * **Observability:** Structured JSON logging and adjustable log levels.
-
----
-
-#### Added‑Value & Future Enhancements
-
-* **Batch Undo** for recent deletions.
-* **Self‑Update** mechanism via GitHub Releases.
-* **GitLab / Azure DevOps Support** through pluggable remotes.
-* Optional **anonymous telemetry** to prioritize new features.
 
 ---
 
