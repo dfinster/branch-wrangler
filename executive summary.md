@@ -37,9 +37,9 @@ Development teams that work with **short‑lived feature branches** routinely ac
 2. **GitHub Reconciliation** – For branches with an upstream, query GitHub’s REST API to attach PR numbers, URLs, draft/open/merged states, and merge dates—cached locally for 15 minutes with concurrency limits.
 3. **State Classification** – Map each branch to exactly one of the canonical *BranchStates* (e.g., `STALE_LOCAL`, `OPEN_PR`, `LOCAL_ONLY`).
 4. **Interactive TUI** – Split‑pane interface: list‑view on the left, details pane on the right; keyboard‑only navigation; configurable color themes.
-5. **Bulk Actions & Shortcuts** – Delete safe branches (`d`), force‑delete selected branches (`F`), open PR in web browser (`o`), checkout branch (`c`), rebase onto base branch (`r`).
-6. **Detached‑HEAD Guard** – Detect detached `HEAD`; present a modal prompting checkout of `main`, `develop`, or continue at user’s own risk.
-7. **Config & Extensibility** – YAML config under XDG (`~/.config/branch‑wrangler`); plugin hooks for custom state analyzers; CLI flags for headless operation.
+5. **Bulk Actions & Shortcuts** – Delete safe branches (`d`), force‑delete selected branches (`F`), open PR in web browser (`o`), checkout branch (`c`), undo (`u`).
+6. **Detached‑HEAD Guard** – Detect detached `HEAD`; present a modal prompting checkout of the default branch at GitHub (usually `main` or `develop`), or continue at user’s own risk.
+7. **Config & Extensibility** – YAML config under XDG (`~/.config/branch‑wrangler`); CLI flags for headless operation.
 
 ---
 
@@ -49,17 +49,8 @@ Development teams that work with **short‑lived feature branches** routinely ac
 * **Reliability:** 90 % test coverage, mocked GitHub calls, end‑to‑end TUI tests.
 * **Security:** OAuth token via env or keychain; never logged; HTTPS enforced.
 * **Accessibility:** Full keyboard control, WCAG‑AA contrast defaults, high‑contrast theme.
-* **Portability:** No CGO; official binaries for macOS, Linux, Windows via GoReleaser.
+* **Portability:** No CGO; official binaries for macOS, Linux, Windows.
 * **Observability:** Structured JSON logging and adjustable log levels.
-
----
-
-#### Added‑Value & Future Enhancements
-
-* **Batch Undo** for recent deletions.
-* **Self‑Update** mechanism via GitHub Releases.
-* **GitLab / Azure DevOps Support** through pluggable remotes.
-* Optional **anonymous telemetry** to prioritize new features.
 
 ---
 
