@@ -79,7 +79,7 @@ Below is a complete description of a new software project, including its require
 |---------------|-------------------------------------------------------------------------------------------------------------------------|
 | Performance   | Scan & classify ≤ 200 branches in < 2 s on a 2020 laptop; GitHub API calls concurrent but ≤ 5 in‑flight to avoid abuse. |
 | Reliability   | Unit + integration tests; mocked GitHub API; e2e TUI tests via `expect` harness; 90 % line coverage.                    |
-| Portability   | No CGO by default; only depend on stdlib + a `tview` TUI lib                                                            |
+| Portability   | No CGO by default; only depend on stdlib + Bubble Tea TUI framework                                                     |
 | Security      | Use the GitHub token specified in `~/.gitconfig` or `~/.github-token`; never log the token; HTTPS enforced.             |
 | Accessibility | All commands operable via keyboard; color schemes pass WCAG AA contrast; optional high‑contrast theme.                  |
 | Observability | Verbose logs (`--log-level debug`) and structured JSON logs (`--log-format json`).                                      |
@@ -88,12 +88,26 @@ Below is a complete description of a new software project, including its require
 
 ### 4. UI/UX Specification (TUI)
 
-The user interface is created using the `tview` TUI library and consists of these panes:
+The user interface is created using the **Bubble Tea** TUI framework and consists of these panes:
 
 - **Left pane**: A list of all branches, color-coded by state.
 - **Right pane**: A details view for the selected branch, showing commit history, PR link, and last activity.
 - **Top bar**: A header with the app name, current filter, search bar, and command key help.
 - **Status bar**: Displays the number of branches in the current filter, and the filter state.
+
+#### Why Bubble Tea over tview
+
+- **Complex State Management**: 16 branch states with filtering/sorting require reactive architecture
+- **Split Pane Layouts**: Bubble Tea explicitly supports adjustable split-screen layouts
+- **Modern Architecture**: Elm-style Model → Update → View pattern ideal for interactive UIs
+- **Rich Ecosystem**: Bubbles (components) + Lipgloss (styling) provide comprehensive tools
+
+#### Key Dependencies
+
+- `github.com/charmbracelet/bubbletea` - Core TUI framework
+- `github.com/charmbracelet/bubbles` - Reusable components (lists, tables, inputs)
+- `github.com/charmbracelet/lipgloss` - Styling and layout capabilities
+
 
 #### 4.1 Key Map:
 
