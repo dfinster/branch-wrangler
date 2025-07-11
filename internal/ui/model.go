@@ -2,6 +2,8 @@ package ui
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -9,16 +11,19 @@ import (
 )
 
 type Model struct {
-	branches     []git.Branch
-	selected     int
-	width        int
-	height       int
-	showHelp     bool
-	filter       string
-	ctx          context.Context
-	classifier   *git.Classifier
-	loading      bool
-	err          error
+	branches      []git.Branch
+	filteredBranches []git.Branch
+	selected      int
+	width         int
+	height        int
+	showHelp      bool
+	showFilter    bool
+	filter        *Filter
+	searchInput   string
+	ctx           context.Context
+	classifier    *git.Classifier
+	loading       bool
+	err           error
 }
 
 type LoadBranchesMsg struct {
@@ -28,11 +33,13 @@ type LoadBranchesMsg struct {
 
 func NewModel(ctx context.Context, classifier *git.Classifier) Model {
 	return Model{
-		branches:   []git.Branch{},
-		selected:   0,
-		ctx:        ctx,
-		classifier: classifier,
-		loading:    true,
+		branches:         []git.Branch{},
+		filteredBranches: []git.Branch{},
+		selected:         0,
+		ctx:              ctx,
+		classifier:       classifier,
+		loading:          true,
+		filter:           NewFilter(),
 	}
 }
 
@@ -48,6 +55,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	
 	case tea.KeyMsg:
+		if m.showFilter {
+			return m.handleFilterKeys(msg)
+		}
+		
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
@@ -56,7 +67,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected--
 			}
 		case "down", "j":
-			if m.selected < len(m.branches)-1 {
+			if m.selected < len(m.filteredBranches)-1 {
 				m.selected++
 			}
 		case "?":
@@ -64,6 +75,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			m.loading = true
 			return m, m.loadBranches()
+		case "f":
+			m.showFilter = !m.showFilter
+		case "a":
+			m.filter.Clear()
+			m.updateFilteredBranches()
+		case "/":
+			m.filter.SetSearchFilter("")
+			m.showFilter = true
+		case "1":
+			if filter, ok := PredefinedFilters["Stale"]; ok {
+				m.filter = &filter
+				m.updateFilteredBranches()
+			}
+		case "2":
+			if filter, ok := PredefinedFilters["PR"]; ok {
+				m.filter = &filter
+				m.updateFilteredBranches()
+			}
+		case "3":
+			if filter, ok := PredefinedFilters["Merged"]; ok {
+				m.filter = &filter
+				m.updateFilteredBranches()
+			}
+		case "4":
+			if filter, ok := PredefinedFilters["Ahead"]; ok {
+				m.filter = &filter
+				m.updateFilteredBranches()
+			}
 		}
 	
 	case LoadBranchesMsg:
@@ -72,6 +111,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.err
 		} else {
 			m.branches = msg.branches
+			m.updateFilteredBranches()
 			m.err = nil
 		}
 		return m, nil
@@ -93,38 +133,57 @@ func (m Model) View() string {
 		return m.helpView()
 	}
 	
+	if m.showFilter {
+		return m.filterView()
+	}
+	
+	header := m.headerView()
 	leftPane := m.branchListView()
 	rightPane := m.branchDetailsView()
 	
-	return lipgloss.JoinHorizontal(
+	content := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		leftPane,
 		rightPane,
+	)
+	
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		header,
+		content,
 	)
 }
 
 func (m Model) branchListView() string {
 	var content string
 	
-	if len(m.branches) == 0 {
-		content = "No branches found"
+	if len(m.filteredBranches) == 0 {
+		content = "No branches match filter"
 	} else {
-		for i, branch := range m.branches {
+		for i, branch := range m.filteredBranches {
 			cursor := " "
 			if i == m.selected {
 				cursor = ">"
 			}
 			
 			state := branch.State.DisplayName()
+			stateColor := m.getStateColor(branch.State)
+			
+			line := fmt.Sprintf("%s %s", cursor, branch.Name)
+			if state != "" {
+				line += fmt.Sprintf(" [%s]", state)
+			}
+			
 			content += lipgloss.NewStyle().
 				Width(m.width/2-4).
-				Render(cursor+" "+branch.Name+" ["+state+"]") + "\n"
+				Foreground(stateColor).
+				Render(line) + "\n"
 		}
 	}
 	
 	return lipgloss.NewStyle().
 		Width(m.width/2).
-		Height(m.height).
+		Height(m.height-3).
 		Border(lipgloss.NormalBorder()).
 		Padding(1).
 		Render(content)
@@ -133,23 +192,23 @@ func (m Model) branchListView() string {
 func (m Model) branchDetailsView() string {
 	var content string
 	
-	if len(m.branches) == 0 || m.selected >= len(m.branches) {
+	if len(m.filteredBranches) == 0 || m.selected >= len(m.filteredBranches) {
 		content = "No branch selected"
 	} else {
-		branch := m.branches[m.selected]
+		branch := m.filteredBranches[m.selected]
 		content = "Branch: " + branch.Name + "\n"
 		content += "State: " + branch.State.DisplayName() + "\n"
 		content += "Last Commit: " + branch.LastCommit.Format("2006-01-02 15:04:05") + "\n"
 		content += "Author: " + branch.Author + "\n"
 		
 		if branch.Ahead > 0 {
-			content += "Ahead: " + string(rune(branch.Ahead)) + "\n"
+			content += "Ahead: " + strconv.Itoa(branch.Ahead) + "\n"
 		}
 		if branch.Behind > 0 {
-			content += "Behind: " + string(rune(branch.Behind)) + "\n"
+			content += "Behind: " + strconv.Itoa(branch.Behind) + "\n"
 		}
 		if branch.PRNumber > 0 {
-			content += "PR: #" + string(rune(branch.PRNumber)) + " - " + branch.PRTitle + "\n"
+			content += "PR: #" + strconv.Itoa(branch.PRNumber) + " - " + branch.PRTitle + "\n"
 		}
 		if branch.PRURL != "" {
 			content += "URL: " + branch.PRURL + "\n"
@@ -158,7 +217,7 @@ func (m Model) branchDetailsView() string {
 	
 	return lipgloss.NewStyle().
 		Width(m.width/2).
-		Height(m.height).
+		Height(m.height-3).
 		Border(lipgloss.NormalBorder()).
 		Padding(1).
 		Render(content)
@@ -174,13 +233,20 @@ Navigation:
   ?       Toggle help
   q       Quit
 
+Filtering:
+  f       Toggle filter menu
+  a       Show all branches
+  /       Search branches
+  1       Stale branches
+  2       PR branches
+  3       Merged branches
+  4       Ahead branches
+
 Actions (coming soon):
   space   Select branch
   d       Delete selected
   c       Checkout branch
   o       Open PR in browser
-  f       Filter branches
-  /       Search branches
 
 Press ? to close help`
 
