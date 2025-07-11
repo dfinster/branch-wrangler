@@ -11,19 +11,23 @@ import (
 )
 
 type Model struct {
-	branches      []git.Branch
+	branches         []git.Branch
 	filteredBranches []git.Branch
-	selected      int
-	width         int
-	height        int
-	showHelp      bool
-	showFilter    bool
-	filter        *Filter
-	searchInput   string
-	ctx           context.Context
-	classifier    *git.Classifier
-	loading       bool
-	err           error
+	selected         int
+	selectedBranches map[int]bool
+	width            int
+	height           int
+	showHelp         bool
+	showFilter       bool
+	showConfirmDialog bool
+	filter           *Filter
+	searchInput      string
+	ctx              context.Context
+	classifier       *git.Classifier
+	loading          bool
+	err              error
+	lastAction       string
+	confirmation     ConfirmationMsg
 }
 
 type LoadBranchesMsg struct {
@@ -36,6 +40,7 @@ func NewModel(ctx context.Context, classifier *git.Classifier) Model {
 		branches:         []git.Branch{},
 		filteredBranches: []git.Branch{},
 		selected:         0,
+		selectedBranches: make(map[int]bool),
 		ctx:              ctx,
 		classifier:       classifier,
 		loading:          true,
@@ -57,6 +62,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if m.showFilter {
 			return m.handleFilterKeys(msg)
+		}
+		
+		if m.showConfirmDialog {
+			return m.handleConfirmKeys(msg)
+		}
+		
+		// Handle action keys first
+		if newModel, cmd := m.handleActionKeys(msg); cmd != nil {
+			return newModel, cmd
 		}
 		
 		switch msg.String() {
@@ -103,6 +117,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.filter = &filter
 				m.updateFilteredBranches()
 			}
+		case "space":
+			if _, exists := m.selectedBranches[m.selected]; exists {
+				delete(m.selectedBranches, m.selected)
+			} else {
+				m.selectedBranches[m.selected] = true
+			}
 		}
 	
 	case LoadBranchesMsg:
@@ -114,6 +134,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.updateFilteredBranches()
 			m.err = nil
 		}
+		return m, nil
+	
+	case ActionMsg:
+		m.lastAction = fmt.Sprintf("%s: %s", msg.Action, msg.Branch)
+		if msg.Error != nil {
+			m.err = msg.Error
+		} else {
+			m.loading = true
+			return m, m.loadBranches()
+		}
+		return m, nil
+	
+	case ConfirmationMsg:
+		m.confirmation = msg
+		m.showConfirmDialog = true
 		return m, nil
 	}
 	
@@ -135,6 +170,10 @@ func (m Model) View() string {
 	
 	if m.showFilter {
 		return m.filterView()
+	}
+	
+	if m.showConfirmDialog {
+		return m.confirmationView()
 	}
 	
 	header := m.headerView()
@@ -166,10 +205,15 @@ func (m Model) branchListView() string {
 				cursor = ">"
 			}
 			
+			checkbox := " "
+			if _, isSelected := m.selectedBranches[i]; isSelected {
+				checkbox = "✓"
+			}
+			
 			state := branch.State.DisplayName()
 			stateColor := m.getStateColor(branch.State)
 			
-			line := fmt.Sprintf("%s %s", cursor, branch.Name)
+			line := fmt.Sprintf("%s%s %s", cursor, checkbox, branch.Name)
 			if state != "" {
 				line += fmt.Sprintf(" [%s]", state)
 			}
@@ -242,11 +286,13 @@ Filtering:
   3       Merged branches
   4       Ahead branches
 
-Actions (coming soon):
-  space   Select branch
-  d       Delete selected
+Actions:
+  space   Select/unselect branch
   c       Checkout branch
+  d       Delete branch (safe)
+  D       Force delete branch
   o       Open PR in browser
+  u       Undo (coming soon)
 
 Press ? to close help`
 
