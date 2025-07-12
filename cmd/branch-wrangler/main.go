@@ -11,6 +11,7 @@ import (
 	"github.com/dfinster/branch-wrangler/internal/git"
 	"github.com/dfinster/branch-wrangler/internal/github"
 	"github.com/dfinster/branch-wrangler/internal/ui"
+	"github.com/dfinster/branch-wrangler/internal/version"
 )
 
 var rootCmd = &cobra.Command{
@@ -18,6 +19,12 @@ var rootCmd = &cobra.Command{
 	Short: "A cross-platform TUI for managing local Git branches",
 	Long:  `Branch Wrangler helps manage local Git branches by reconciling them with GitHub.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Handle version flag
+		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
+			handleVersionCommand(cmd)
+			return
+		}
+		
 		if err := runTUI(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -78,6 +85,22 @@ func runTUI() error {
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	_, err = p.Run()
 	return err
+}
+
+func handleVersionCommand(cmd *cobra.Command) {
+	versionInfo := version.GetFullVersion()
+	
+	// Check if JSON output is requested
+	if jsonFlag, _ := cmd.Flags().GetBool("json"); jsonFlag {
+		jsonOutput, err := versionInfo.JSON()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error formatting version as JSON: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(jsonOutput)
+	} else {
+		fmt.Println(versionInfo.String())
+	}
 }
 
 func main() {
