@@ -66,13 +66,13 @@ func (v VersionInfo) String() string {
 	if BuildDate == "unknown" {
 		return fmt.Sprintf("branch-wrangler %s (development build)", v.Version)
 	}
-	
+
 	buildTime, err := time.Parse(time.RFC3339, BuildDate)
 	if err != nil {
 		return fmt.Sprintf("branch-wrangler %s\nBuild: %s\nCommit: %s\nGo: %s",
 			v.Version, BuildDate, v.CommitHash, v.GoVersion)
 	}
-	
+
 	return fmt.Sprintf("branch-wrangler %s\nBuild: %s\nCommit: %s\nGo: %s",
 		v.Version, buildTime.Format("2006-01-02 15:04:05 MST"), v.CommitHash, v.GoVersion)
 }

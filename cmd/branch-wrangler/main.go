@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
+
 	"github.com/dfinster/branch-wrangler/internal/config"
 	"github.com/dfinster/branch-wrangler/internal/git"
 	"github.com/dfinster/branch-wrangler/internal/github"
@@ -24,7 +25,7 @@ var rootCmd = &cobra.Command{
 			handleVersionCommand(cmd)
 			return
 		}
-		
+
 		if err := runTUI(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -51,37 +52,37 @@ func runTUI() error {
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
-	
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
-	
+
 	gitClient := git.NewClient(cwd)
 	if !gitClient.IsGitRepo() {
 		return fmt.Errorf("not a git repository")
 	}
-	
+
 	remoteURL, err := gitClient.GetRemoteURL()
 	if err != nil {
 		return fmt.Errorf("failed to get remote URL: %w", err)
 	}
-	
+
 	owner, repo, err := gitClient.ParseGitHubRepo(remoteURL)
 	if err != nil {
 		return fmt.Errorf("not a GitHub repository: %w", err)
 	}
-	
+
 	githubClient, err := github.NewCachedClient(owner, repo)
 	if err != nil {
 		return fmt.Errorf("failed to create GitHub client: %w", err)
 	}
-	
+
 	classifier := git.NewClassifier(gitClient, githubClient, cfg.BaseBranches)
-	
+
 	ctx := context.Background()
 	model := ui.NewModel(ctx, classifier)
-	
+
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	_, err = p.Run()
 	return err
@@ -89,7 +90,7 @@ func runTUI() error {
 
 func handleVersionCommand(cmd *cobra.Command) {
 	versionInfo := version.GetFullVersion()
-	
+
 	// Check if JSON output is requested
 	if jsonFlag, _ := cmd.Flags().GetBool("json"); jsonFlag {
 		jsonOutput, err := versionInfo.JSON()

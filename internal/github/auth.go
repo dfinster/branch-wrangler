@@ -40,7 +40,7 @@ func (a *AuthConfig) GetToken() (string, error) {
 	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
 		return token, nil
 	}
-	
+
 	return "", fmt.Errorf("GITHUB_TOKEN environment variable not set - please set it to your GitHub Personal Access Token")
 }
 
@@ -57,7 +57,7 @@ func (a *AuthConfig) SaveToken(token string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return writeTokenToConfig(configPath, token)
 }
 
@@ -65,7 +65,7 @@ func (a *AuthConfig) ValidateToken(token string) error {
 	client := github.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)))
-	
+
 	_, _, err := client.RateLimits(context.Background())
 	return err
 }
@@ -79,12 +79,12 @@ func getConfigPath() (string, error) {
 		}
 		configDir = filepath.Join(homeDir, ".config")
 	}
-	
+
 	appConfigDir := filepath.Join(configDir, "branch-wrangler")
 	if err := os.MkdirAll(appConfigDir, 0700); err != nil {
 		return "", err
 	}
-	
+
 	return filepath.Join(appConfigDir, "config.yml"), nil
 }
 
