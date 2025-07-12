@@ -71,32 +71,53 @@ jobs:
     - name: Run tests
       run: make test
     
-    - name: Build release binary
+    - name: Build release binaries for all platforms
       run: |
         export VERSION=${{ needs.validate-tag.outputs.version }}
-        make build-release
+        make build-all
     
     - name: Generate checksums
       run: make checksums
     
-    - name: Verify binary
+    - name: Verify binaries
       run: |
-        # Find the binary (it will have version in filename)
-        BINARY=$(find dist/ -name "branch-wrangler-*" -type f ! -name "*.txt")
-        echo "Testing binary: $BINARY"
+        VERSION=${{ needs.validate-tag.outputs.version }}
+        echo "Verifying all platform binaries for version: $VERSION"
         
-        # Test binary functionality
-        $BINARY --version
-        $BINARY --help
-        
-        # Verify version matches tag
-        BINARY_VERSION=$($BINARY --version | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*' || echo "version-not-found")
-        if [ "$BINARY_VERSION" = "${{ needs.validate-tag.outputs.version }}" ]; then
-          echo "✓ Binary version matches tag: $BINARY_VERSION"
+        # Test Darwin ARM64 binary (can run natively on macOS)
+        DARWIN_ARM64_BINARY="dist/branch-wrangler-${VERSION}-darwin-arm64"
+        if [ -f "$DARWIN_ARM64_BINARY" ]; then
+          echo "Testing Darwin ARM64 binary: $DARWIN_ARM64_BINARY"
+          $DARWIN_ARM64_BINARY --version
+          $DARWIN_ARM64_BINARY --help > /dev/null
+          
+          # Verify version matches tag
+          BINARY_VERSION=$($DARWIN_ARM64_BINARY --version | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*' || echo "version-not-found")
+          if [ "$BINARY_VERSION" = "$VERSION" ]; then
+            echo "✓ Darwin ARM64 binary version matches tag: $BINARY_VERSION"
+          else
+            echo "✗ Darwin ARM64 version mismatch - Tag: $VERSION, Binary: $BINARY_VERSION"
+            exit 1
+          fi
         else
-          echo "✗ Version mismatch - Tag: ${{ needs.validate-tag.outputs.version }}, Binary: $BINARY_VERSION"
+          echo "✗ Darwin ARM64 binary not found: $DARWIN_ARM64_BINARY"
           exit 1
         fi
+        
+        # Verify other binaries exist and have correct names
+        for platform in "darwin-amd64" "linux-amd64" "linux-arm64"; do
+          BINARY="dist/branch-wrangler-${VERSION}-${platform}"
+          if [ -f "$BINARY" ]; then
+            echo "✓ Found $platform binary: $BINARY"
+            # Basic file verification
+            file "$BINARY"
+          else
+            echo "✗ Missing $platform binary: $BINARY"
+            exit 1
+          fi
+        done
+        
+        echo "✓ All platform binaries verified"
     
     - name: Upload release artifacts
       uses: actions/upload-artifact@v4
@@ -202,3 +223,103 @@ jobs:
       run: |
         echo "🎉 Successfully created release ${{ needs.validate-tag.outputs.version }}"
         echo "📦 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-tag.outputs.version }}"
+
+  update-homebrew:
+    name: Update Homebrew Formula
+    runs-on: ubuntu-latest
+    needs: [validate-tag, create-release]
+    if: needs.validate-tag.outputs.is-valid == 'true'
+    
+    steps:
+    - name: Checkout tap repository
+      uses: actions/checkout@v4
+      with:
+        repository: dfinster/homebrew-tap
+        token: ${{ secrets.GITHUB_TOKEN }}
+        path: homebrew-tap
+    
+    - name: Download release artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-binaries
+        path: ./dist/
+    
+    - name: Update formula
+      run: |
+        VERSION=${{ needs.validate-tag.outputs.version }}
+        VERSION_NUM=${VERSION#v}  # Remove 'v' prefix
+        
+        # Get SHA256 checksums for all platforms
+        DARWIN_ARM64_SHA=$(grep "branch-wrangler-${VERSION}-darwin-arm64" dist/checksums.txt | cut -d' ' -f1)
+        DARWIN_AMD64_SHA=$(grep "branch-wrangler-${VERSION}-darwin-amd64" dist/checksums.txt | cut -d' ' -f1)
+        LINUX_ARM64_SHA=$(grep "branch-wrangler-${VERSION}-linux-arm64" dist/checksums.txt | cut -d' ' -f1)
+        LINUX_AMD64_SHA=$(grep "branch-wrangler-${VERSION}-linux-amd64" dist/checksums.txt | cut -d' ' -f1)
+        
+        echo "Platform checksums:"
+        echo "  Darwin ARM64: $DARWIN_ARM64_SHA"
+        echo "  Darwin AMD64: $DARWIN_AMD64_SHA"
+        echo "  Linux ARM64:  $LINUX_ARM64_SHA"
+        echo "  Linux AMD64:  $LINUX_AMD64_SHA"
+        
+        # Create updated formula
+        cat > homebrew-tap/Formula/branch-wrangler.rb << EOF
+        class BranchWrangler < Formula
+          desc "Cross-platform TUI for managing local Git branches with GitHub integration"
+          homepage "https://github.com/dfinster/branch-wrangler"
+          version "${VERSION_NUM}"
+          license "MIT"
+        
+          on_macos do
+            on_arm do
+              url "https://github.com/dfinster/branch-wrangler/releases/download/${VERSION}/branch-wrangler-${VERSION}-darwin-arm64"
+              sha256 "${DARWIN_ARM64_SHA}"
+            end
+        
+            on_intel do
+              url "https://github.com/dfinster/branch-wrangler/releases/download/${VERSION}/branch-wrangler-${VERSION}-darwin-amd64"
+              sha256 "${DARWIN_AMD64_SHA}"
+            end
+          end
+        
+          on_linux do
+            on_arm do
+              url "https://github.com/dfinster/branch-wrangler/releases/download/${VERSION}/branch-wrangler-${VERSION}-linux-arm64"
+              sha256 "${LINUX_ARM64_SHA}"
+            end
+        
+            on_intel do
+              url "https://github.com/dfinster/branch-wrangler/releases/download/${VERSION}/branch-wrangler-${VERSION}-linux-amd64"
+              sha256 "${LINUX_AMD64_SHA}"
+            end
+          end
+        
+          def install
+            if OS.mac?
+              if Hardware::CPU.arm?
+                bin.install "branch-wrangler-${VERSION}-darwin-arm64" => "branch-wrangler"
+              else
+                bin.install "branch-wrangler-${VERSION}-darwin-amd64" => "branch-wrangler"
+              end
+            else
+              if Hardware::CPU.arm?
+                bin.install "branch-wrangler-${VERSION}-linux-arm64" => "branch-wrangler"
+              else
+                bin.install "branch-wrangler-${VERSION}-linux-amd64" => "branch-wrangler"
+              end
+            end
+          end
+        
+          test do
+            system "#{bin}/branch-wrangler", "--version"
+          end
+        end
+        EOF
+    
+    - name: Commit and push formula update
+      run: |
+        cd homebrew-tap
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add Formula/branch-wrangler.rb
+        git commit -m "Update branch-wrangler to ${{ needs.validate-tag.outputs.version }}"
+        git push
