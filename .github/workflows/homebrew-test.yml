@@ -13,31 +13,31 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Test Homebrew Tap Installation
     runs-on: macos-latest
-    
+
     steps:
     - name: Set up Homebrew
       run: |
         # Ensure Homebrew is up to date
         brew update
-    
+
     - name: Test tap and formula
       run: |
         # Add the tap
         brew tap dfinster/tap
-        
+
         # Test formula info (without installing)
         brew info dfinster/tap/branch-wrangler
-        
+
         # Validate formula
         brew audit --strict dfinster/tap/branch-wrangler
-        
+
         # Test installation
         brew install dfinster/tap/branch-wrangler
-        
+
         # Test the installed binary
         branch-wrangler --version
         branch-wrangler --help > /dev/null
-        
+
         # Clean up
         brew uninstall branch-wrangler
         brew untap dfinster/tap
