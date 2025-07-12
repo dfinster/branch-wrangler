@@ -16,11 +16,11 @@ const (
 )
 
 type Filter struct {
-	Mode        FilterMode
-	States      []git.BranchState
-	SearchTerm  string
-	CustomName  string
-	IsActive    bool
+	Mode       FilterMode
+	States     []git.BranchState
+	SearchTerm string
+	CustomName string
+	IsActive   bool
 }
 
 func NewFilter() *Filter {
@@ -37,13 +37,13 @@ func (f *Filter) Apply(branches []git.Branch) []git.Branch {
 	}
 
 	var filtered []git.Branch
-	
+
 	for _, branch := range branches {
 		if f.matches(branch) {
 			filtered = append(filtered, branch)
 		}
 	}
-	
+
 	return filtered
 }
 
@@ -65,7 +65,7 @@ func (f *Filter) matchesState(state git.BranchState) bool {
 	if len(f.States) == 0 {
 		return true
 	}
-	
+
 	for _, filterState := range f.States {
 		if state == filterState {
 			return true
@@ -78,7 +78,7 @@ func (f *Filter) matchesSearch(branchName string) bool {
 	if f.SearchTerm == "" {
 		return true
 	}
-	
+
 	return strings.Contains(strings.ToLower(branchName), strings.ToLower(f.SearchTerm))
 }
 
@@ -116,7 +116,7 @@ func (f *Filter) DisplayName() string {
 	if !f.IsActive {
 		return "All Branches"
 	}
-	
+
 	switch f.Mode {
 	case FilterByState:
 		if len(f.States) == 1 {
@@ -128,7 +128,7 @@ func (f *Filter) DisplayName() string {
 	case FilterByCustom:
 		return f.CustomName
 	}
-	
+
 	return "All Branches"
 }
 

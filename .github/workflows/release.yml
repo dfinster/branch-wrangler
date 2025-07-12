@@ -1,0 +1,204 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  validate-tag:
+    name: Validate Release Tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      is-valid: ${{ steps.validate.outputs.is-valid }}
+    
+    steps:
+    - name: Get version from tag
+      id: get-version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+    
+    - name: Validate tag format
+      id: validate
+      run: |
+        VERSION=${{ steps.get-version.outputs.version }}
+        if [[ $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "is-valid=true" >> $GITHUB_OUTPUT
+          echo "✓ Valid semantic version tag: $VERSION"
+        else
+          echo "is-valid=false" >> $GITHUB_OUTPUT
+          echo "✗ Invalid tag format: $VERSION (expected: v*.*.* e.g., v1.0.0)"
+          exit 1
+        fi
+
+  build-release:
+    name: Build Release Binary
+    runs-on: macos-latest
+    needs: validate-tag
+    if: needs.validate-tag.outputs.is-valid == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-release-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-release-
+          ${{ runner.os }}-go-
+    
+    - name: Download dependencies
+      run: go mod download
+    
+    - name: Run tests
+      run: make test
+    
+    - name: Build release binary
+      run: |
+        export VERSION=${{ needs.validate-tag.outputs.version }}
+        make build-release
+    
+    - name: Generate checksums
+      run: make checksums
+    
+    - name: Verify binary
+      run: |
+        # Find the binary (it will have version in filename)
+        BINARY=$(find dist/ -name "branch-wrangler-*" -type f ! -name "*.txt")
+        echo "Testing binary: $BINARY"
+        
+        # Test binary functionality
+        $BINARY --version
+        $BINARY --help
+        
+        # Verify version matches tag
+        BINARY_VERSION=$($BINARY --version | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*' || echo "version-not-found")
+        if [ "$BINARY_VERSION" = "${{ needs.validate-tag.outputs.version }}" ]; then
+          echo "✓ Binary version matches tag: $BINARY_VERSION"
+        else
+          echo "✗ Version mismatch - Tag: ${{ needs.validate-tag.outputs.version }}, Binary: $BINARY_VERSION"
+          exit 1
+        fi
+    
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-binaries
+        path: |
+          dist/branch-wrangler-*
+          dist/checksums.txt
+        retention-days: 1
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-tag, build-release]
+    if: needs.validate-tag.outputs.is-valid == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Download release artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-binaries
+        path: ./dist/
+    
+    - name: Generate release notes
+      id: release-notes
+      run: |
+        VERSION=${{ needs.validate-tag.outputs.version }}
+        
+        # Get previous tag for changelog
+        PREV_TAG=$(git tag --sort=-version:refname | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | head -2 | tail -1)
+        
+        if [ -z "$PREV_TAG" ]; then
+          echo "This is the first release of Branch Wrangler."
+          CHANGELOG="## First Release\n\nInitial release of Branch Wrangler - a cross-platform TUI for Git branch management with GitHub integration."
+        else
+          echo "Generating changelog from $PREV_TAG to $VERSION"
+          
+          # Generate changelog from git commits
+          CHANGELOG="## Changes\n\n"
+          while IFS= read -r commit; do
+            if [[ $commit =~ ^[a-f0-9]+\ (.+)$ ]]; then
+              CHANGELOG="${CHANGELOG}- ${BASH_REMATCH[1]}\n"
+            fi
+          done < <(git log --oneline --no-merges ${PREV_TAG}..HEAD | head -20)
+        fi
+        
+        # Create full release notes
+        cat > release_notes.md << EOF
+        # Branch Wrangler ${VERSION}
+        
+        ${CHANGELOG}
+        
+        ## Installation
+        
+        ### macOS
+        
+        1. Download the \`branch-wrangler-${VERSION}-darwin-arm64\` binary
+        2. Verify the checksum against \`checksums.txt\`
+        3. Make it executable: \`chmod +x branch-wrangler-${VERSION}-darwin-arm64\`
+        4. Move to your PATH: \`mv branch-wrangler-${VERSION}-darwin-arm64 /usr/local/bin/branch-wrangler\`
+        
+        ### Build from Source
+        
+        \`\`\`bash
+        git clone https://github.com/dfinster/branch-wrangler.git
+        cd branch-wrangler
+        make build-release
+        \`\`\`
+        
+        ## Verification
+        
+        All binaries are signed and checksums are provided in \`checksums.txt\`.
+        
+        \`\`\`bash
+        # Verify checksum (macOS)
+        shasum -a 256 -c checksums.txt
+        \`\`\`
+        EOF
+        
+        echo "release-notes-file=release_notes.md" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ needs.validate-tag.outputs.version }}
+        name: Branch Wrangler ${{ needs.validate-tag.outputs.version }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+        files: |
+          dist/branch-wrangler-*
+          dist/checksums.txt
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Release Success Notification
+      run: |
+        echo "🎉 Successfully created release ${{ needs.validate-tag.outputs.version }}"
+        echo "📦 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-tag.outputs.version }}"

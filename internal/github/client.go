@@ -30,15 +30,15 @@ func NewClient(owner, repo string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if err := auth.ValidateToken(token); err != nil {
 		return nil, err
 	}
-	
+
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(context.Background(), ts)
 	client := github.NewClient(tc)
-	
+
 	return &Client{
 		client: client,
 		auth:   auth,
@@ -53,15 +53,15 @@ func (c *Client) GetPullRequestsForBranch(ctx context.Context, branch string) ([
 		State:       "all",
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
-	
+
 	var allPRs []PullRequest
-	
+
 	for {
 		prs, resp, err := c.client.PullRequests.List(ctx, c.owner, c.repo, opts)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		for _, pr := range prs {
 			allPRs = append(allPRs, PullRequest{
 				Number: pr.GetNumber(),
@@ -72,13 +72,13 @@ func (c *Client) GetPullRequestsForBranch(ctx context.Context, branch string) ([
 				URL:    pr.GetHTMLURL(),
 			})
 		}
-		
+
 		if resp.NextPage == 0 {
 			break
 		}
 		opts.Page = resp.NextPage
 	}
-	
+
 	return allPRs, nil
 }
 
@@ -114,7 +114,7 @@ func NewCachedClient(owner, repo string) (*CachedClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &CachedClient{
 		client: client,
 		cache:  make(map[string]cacheEntry),
@@ -123,46 +123,46 @@ func NewCachedClient(owner, repo string) (*CachedClient, error) {
 
 func (c *CachedClient) GetPullRequestsForBranch(ctx context.Context, branch string) ([]PullRequest, error) {
 	cacheKey := "pr:" + branch
-	
+
 	if entry, exists := c.cache[cacheKey]; exists {
 		if time.Since(entry.timestamp) < entry.ttl {
 			return entry.data.([]PullRequest), nil
 		}
 	}
-	
+
 	prs, err := c.client.GetPullRequestsForBranch(ctx, branch)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	c.cache[cacheKey] = cacheEntry{
 		data:      prs,
 		timestamp: time.Now(),
 		ttl:       15 * time.Minute,
 	}
-	
+
 	return prs, nil
 }
 
 func (c *CachedClient) BranchExists(ctx context.Context, branch string) (bool, error) {
 	cacheKey := "branch:" + branch
-	
+
 	if entry, exists := c.cache[cacheKey]; exists {
 		if time.Since(entry.timestamp) < entry.ttl {
 			return entry.data.(bool), nil
 		}
 	}
-	
+
 	exists, err := c.client.BranchExists(ctx, branch)
 	if err != nil {
 		return false, err
 	}
-	
+
 	c.cache[cacheKey] = cacheEntry{
 		data:      exists,
 		timestamp: time.Now(),
 		ttl:       15 * time.Minute,
 	}
-	
+
 	return exists, nil
 }

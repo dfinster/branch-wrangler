@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/dfinster/branch-wrangler/internal/git"
 )
 
@@ -14,17 +15,17 @@ func (m Model) headerView() string {
 	if m.filter.IsActive {
 		filterDisplay = "Filter: " + filterDisplay
 	}
-	
+
 	count := fmt.Sprintf("(%d/%d branches)", len(m.filteredBranches), len(m.branches))
-	
+
 	left := "Branch Wrangler"
 	center := filterDisplay
 	right := count
-	
+
 	leftStyle := lipgloss.NewStyle().Bold(true)
 	centerStyle := lipgloss.NewStyle().Italic(true)
 	rightStyle := lipgloss.NewStyle().Faint(true)
-	
+
 	header := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		leftStyle.Render(left),
@@ -33,7 +34,7 @@ func (m Model) headerView() string {
 		strings.Repeat(" ", max(0, m.width-len(left)-len(center)-len(right))),
 		rightStyle.Render(right),
 	)
-	
+
 	return lipgloss.NewStyle().
 		Width(m.width).
 		Height(2).
@@ -50,14 +51,14 @@ func (m Model) filterView() string {
 	content += "3 - Merged branches\n"
 	content += "4 - Ahead branches\n"
 	content += "/ - Search by name\n\n"
-	
+
 	if m.filter.Mode == FilterBySearch {
 		content += "Search: " + m.searchInput + "\n"
 		content += "Type to search, Enter to apply, Esc to cancel\n"
 	}
-	
+
 	content += "\nPress f to close filter menu"
-	
+
 	return lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).
@@ -69,7 +70,7 @@ func (m Model) filterView() string {
 func (m Model) getStateColor(state git.BranchState) lipgloss.Color {
 	switch state {
 	case git.StaleLocal:
-		return lipgloss.Color("9")  // Red
+		return lipgloss.Color("9") // Red
 	case git.OpenPR:
 		return lipgloss.Color("10") // Green
 	case git.DraftPR:
@@ -81,11 +82,11 @@ func (m Model) getStateColor(state git.BranchState) lipgloss.Color {
 	case git.BehindRemote:
 		return lipgloss.Color("14") // Cyan
 	case git.Diverged:
-		return lipgloss.Color("9")  // Red
+		return lipgloss.Color("9") // Red
 	case git.InSync:
 		return lipgloss.Color("10") // Green
 	default:
-		return lipgloss.Color("7")  // White
+		return lipgloss.Color("7") // White
 	}
 }
 

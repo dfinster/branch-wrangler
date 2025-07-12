@@ -7,22 +7,22 @@ import (
 
 func (m Model) confirmationView() string {
 	title := "Confirmation Required"
-	
+
 	var actionColor lipgloss.Color
 	if m.confirmation.Dangerous {
 		actionColor = lipgloss.Color("9") // Red
 	} else {
 		actionColor = lipgloss.Color("10") // Green
 	}
-	
+
 	content := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(actionColor).
 		Render(title) + "\n\n"
-	
+
 	content += m.confirmation.Description + "\n\n"
 	content += "Press 'y' to confirm, 'n' to cancel"
-	
+
 	return lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).
