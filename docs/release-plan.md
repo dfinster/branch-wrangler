@@ -7,7 +7,7 @@ This document outlines the implementation plan for establishing comprehensive re
 ## Requirements Summary
 
 - **FR-26**: GitHub hosting with semantic versioning (MAJOR.MINOR.PATCH)
-- **FR-27**: Release assets with macOS binaries and checksums
+- **FR-27**: Release assets with macOS binaries and checksums for Apple Silicon
 - **FR-28**: GitHub Actions automation for releases on version tags
 - **FR-29**: `--version` command with build metadata
 - **FR-30**: Homebrew formula for macOS distribution
@@ -107,8 +107,8 @@ Create version management infrastructure to support semantic versioning, build-t
 Implement build system for macOS binaries on Apple Silicon with checksum generation as required by FR-27.
 
 **Tasks**:
-- [ ] Create comprehensive Makefile with macOS targets
-- [ ] Define build targets: `darwin/amd64`
+- [ ] Create comprehensive Makefile with macOS targeting Apple Silicon
+- [ ] Define build targets: `darwin/arm64`
 - [ ] Implement version injection via `-ldflags` during build
 - [ ] Add binary naming convention: `branch-wrangler-{version}-{os}-{arch}`
 - [ ] Generate SHA256 checksums for all binaries
@@ -118,9 +118,9 @@ Implement build system for macOS binaries on Apple Silicon with checksum generat
 - [ ] Create checksums.txt file generation
 
 **Acceptance Criteria**:
-- Both macOS architectures build successfully
-- Binaries include correct version information
-- SHA256 checksums generated for all binaries
+- macOS Apple Silicon architecture builds successfully
+- Binary includes correct version information
+- SHA256 checksum generated for binary
 - Build process is reproducible and documented
 - Output follows consistent naming convention
 - Checksums file properly formatted
@@ -144,7 +144,7 @@ Create comprehensive GitHub Actions workflows for automated testing, building, a
 **Tasks**:
 - [ ] Create `.github/workflows/test.yml` for pull request testing
 - [ ] Create `.github/workflows/release.yml` triggered by version tags
-- [ ] Implement matrix build for macOS architectures
+- [ ] Implement build for macOS Apple Silicon architecture
 - [ ] Add automated testing with multiple Go versions
 - [ ] Configure artifact upload for built binaries
 - [ ] Add release creation with semantic version validation
@@ -156,7 +156,7 @@ Create comprehensive GitHub Actions workflows for automated testing, building, a
 **Acceptance Criteria**:
 - PR workflow runs tests on Go 1.22+ versions
 - Release workflow triggers only on valid version tags
-- Both macOS binaries built and attached to releases
+- macOS binary built and attached to releases
 - Checksums file included in release assets
 - Release notes automatically generated
 - Workflow security properly configured
@@ -191,7 +191,7 @@ Implement Homebrew distribution system with custom tap as specified in FR-30.
 
 **Acceptance Criteria**:
 - Custom tap repository created and configured
-- Formula installs correctly on both architectures
+- Formula installs correctly on Apple Silicon
 - `brew install dfinster/tap/branch-wrangler` works
 - Formula automatically updated on releases
 - Installation tested on macOS 12+ versions
@@ -212,10 +212,10 @@ Implement Homebrew distribution system with custom tap as specified in FR-30.
 **Labels**: `documentation`, `linux`, `installation`
 
 **Description**:
-Create comprehensive documentation for installation across platforms, with specific focus on Linux compilation as required by FR-31.
+As required by FR-31: create comprehensive documentation for installation on macOS with Homebrew (Apple Silicon only) or by downloading binary from GitHub. Create a comprehensive guide to build the binary from source on Linux. Microsoft Windows is not a supported platform.
 
 **Tasks**:
-- [ ] Create detailed installation guide for all platforms
+- [ ] Create detailed installation guide for all supported platforms
 - [ ] Document Linux compilation from source process
 - [ ] Add platform-specific requirements and dependencies
 - [ ] Create troubleshooting section for common issues
@@ -323,7 +323,7 @@ Comprehensive end-to-end testing of the release system and creation of initial v
 ### External Dependencies
 - GitHub repository with Actions enabled
 - Separate repository for Homebrew tap
-- macOS systems for testing (Intel and Apple Silicon)
+- macOS system for testing (Apple Silicon)
 - Linux systems for documentation validation
 
 ### Internal Prerequisites
