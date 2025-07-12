@@ -47,12 +47,12 @@ func GetConfigPath() (string, error) {
 		}
 		configDir = filepath.Join(homeDir, ".config")
 	}
-	
+
 	appConfigDir := filepath.Join(configDir, "branch-wrangler")
 	if err := os.MkdirAll(appConfigDir, 0700); err != nil {
 		return "", err
 	}
-	
+
 	return filepath.Join(appConfigDir, "config.yml"), nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"os/exec"
 
 	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/dfinster/branch-wrangler/internal/git"
 )
 
@@ -25,9 +26,9 @@ func (m Model) handleActionKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if len(m.filteredBranches) == 0 || m.selected >= len(m.filteredBranches) {
 		return m, nil
 	}
-	
+
 	selectedBranch := m.filteredBranches[m.selected]
-	
+
 	switch msg.String() {
 	case "c":
 		return m, m.checkoutBranch(selectedBranch.Name)
@@ -35,8 +36,8 @@ func (m Model) handleActionKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if selectedBranch.State == git.StaleLocal {
 			return m, m.deleteBranch(selectedBranch.Name, false)
 		} else {
-			return m, m.createConfirmation("delete", selectedBranch.Name, 
-				fmt.Sprintf("Branch '%s' is in state '%s'. Are you sure you want to delete it?", 
+			return m, m.createConfirmation("delete", selectedBranch.Name,
+				fmt.Sprintf("Branch '%s' is in state '%s'. Are you sure you want to delete it?",
 					selectedBranch.Name, selectedBranch.State.DisplayName()), true)
 		}
 	case "D":
@@ -50,7 +51,7 @@ func (m Model) handleActionKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "u":
 		return m, m.showUndoView()
 	}
-	
+
 	return m, nil
 }
 
@@ -74,7 +75,7 @@ func (m Model) deleteBranch(branchName string, force bool) tea.Cmd {
 		} else {
 			cmd = exec.Command("git", "branch", "-d", branchName)
 		}
-		
+
 		err := cmd.Run()
 		return ActionMsg{
 			Action: "delete",
@@ -87,10 +88,10 @@ func (m Model) deleteBranch(branchName string, force bool) tea.Cmd {
 func (m Model) openPR(url string) tea.Cmd {
 	return func() tea.Msg {
 		var cmd *exec.Cmd
-		
+
 		// Try different browsers/commands based on OS
 		browsers := []string{"xdg-open", "open", "start"}
-		
+
 		for _, browser := range browsers {
 			cmd = exec.Command(browser, url)
 			if cmd.Run() == nil {
@@ -101,7 +102,7 @@ func (m Model) openPR(url string) tea.Cmd {
 				}
 			}
 		}
-		
+
 		return ActionMsg{
 			Action: "open-pr",
 			Branch: url,
@@ -134,7 +135,7 @@ func (m Model) showUndoView() tea.Cmd {
 func (m Model) handleBulkActions(selectedBranches []git.Branch, action string) tea.Cmd {
 	return func() tea.Msg {
 		var errors []error
-		
+
 		for _, branch := range selectedBranches {
 			switch action {
 			case "delete":
@@ -151,7 +152,7 @@ func (m Model) handleBulkActions(selectedBranches []git.Branch, action string) t
 				}
 			}
 		}
-		
+
 		if len(errors) > 0 {
 			return ActionMsg{
 				Action: "bulk-" + action,
@@ -159,7 +160,7 @@ func (m Model) handleBulkActions(selectedBranches []git.Branch, action string) t
 				Error:  fmt.Errorf("some operations failed: %v", errors),
 			}
 		}
-		
+
 		return ActionMsg{
 			Action: "bulk-" + action,
 			Branch: fmt.Sprintf("%d branches", len(selectedBranches)),

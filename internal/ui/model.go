@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/dfinster/branch-wrangler/internal/git"
 )
 
@@ -58,21 +59,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		return m, nil
-	
+
 	case tea.KeyMsg:
 		if m.showFilter {
 			return m.handleFilterKeys(msg)
 		}
-		
+
 		if m.showConfirmDialog {
 			return m.handleConfirmKeys(msg)
 		}
-		
+
 		// Handle action keys first
 		if newModel, cmd := m.handleActionKeys(msg); cmd != nil {
 			return newModel, cmd
 		}
-		
+
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
@@ -124,7 +125,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedBranches[m.selected] = true
 			}
 		}
-	
+
 	case LoadBranchesMsg:
 		m.loading = false
 		if msg.err != nil {
@@ -135,7 +136,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = nil
 		}
 		return m, nil
-	
+
 	case ActionMsg:
 		m.lastAction = fmt.Sprintf("%s: %s", msg.Action, msg.Branch)
 		if msg.Error != nil {
@@ -145,13 +146,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.loadBranches()
 		}
 		return m, nil
-	
+
 	case ConfirmationMsg:
 		m.confirmation = msg
 		m.showConfirmDialog = true
 		return m, nil
 	}
-	
+
 	return m, nil
 }
 
@@ -159,33 +160,33 @@ func (m Model) View() string {
 	if m.loading {
 		return "Loading branches..."
 	}
-	
+
 	if m.err != nil {
 		return "Error: " + m.err.Error()
 	}
-	
+
 	if m.showHelp {
 		return m.helpView()
 	}
-	
+
 	if m.showFilter {
 		return m.filterView()
 	}
-	
+
 	if m.showConfirmDialog {
 		return m.confirmationView()
 	}
-	
+
 	header := m.headerView()
 	leftPane := m.branchListView()
 	rightPane := m.branchDetailsView()
-	
+
 	content := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		leftPane,
 		rightPane,
 	)
-	
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		header,
@@ -195,7 +196,7 @@ func (m Model) View() string {
 
 func (m Model) branchListView() string {
 	var content string
-	
+
 	if len(m.filteredBranches) == 0 {
 		content = "No branches match filter"
 	} else {
@@ -204,27 +205,27 @@ func (m Model) branchListView() string {
 			if i == m.selected {
 				cursor = ">"
 			}
-			
+
 			checkbox := " "
 			if _, isSelected := m.selectedBranches[i]; isSelected {
 				checkbox = "✓"
 			}
-			
+
 			state := branch.State.DisplayName()
 			stateColor := m.getStateColor(branch.State)
-			
+
 			line := fmt.Sprintf("%s%s %s", cursor, checkbox, branch.Name)
 			if state != "" {
 				line += fmt.Sprintf(" [%s]", state)
 			}
-			
+
 			content += lipgloss.NewStyle().
 				Width(m.width/2-4).
 				Foreground(stateColor).
 				Render(line) + "\n"
 		}
 	}
-	
+
 	return lipgloss.NewStyle().
 		Width(m.width/2).
 		Height(m.height-3).
@@ -235,7 +236,7 @@ func (m Model) branchListView() string {
 
 func (m Model) branchDetailsView() string {
 	var content string
-	
+
 	if len(m.filteredBranches) == 0 || m.selected >= len(m.filteredBranches) {
 		content = "No branch selected"
 	} else {
@@ -244,7 +245,7 @@ func (m Model) branchDetailsView() string {
 		content += "State: " + branch.State.DisplayName() + "\n"
 		content += "Last Commit: " + branch.LastCommit.Format("2006-01-02 15:04:05") + "\n"
 		content += "Author: " + branch.Author + "\n"
-		
+
 		if branch.Ahead > 0 {
 			content += "Ahead: " + strconv.Itoa(branch.Ahead) + "\n"
 		}
@@ -258,7 +259,7 @@ func (m Model) branchDetailsView() string {
 			content += "URL: " + branch.PRURL + "\n"
 		}
 	}
-	
+
 	return lipgloss.NewStyle().
 		Width(m.width/2).
 		Height(m.height-3).
