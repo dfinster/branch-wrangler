@@ -295,23 +295,19 @@ jobs:
           end
 
           def install
-            if OS.mac?
-              if Hardware::CPU.arm?
-                bin.install "branch-wrangler-${VERSION}-darwin-arm64" => "branch-wrangler"
-              else
-                bin.install "branch-wrangler-${VERSION}-darwin-amd64" => "branch-wrangler"
-              end
-            else
-              if Hardware::CPU.arm?
-                bin.install "branch-wrangler-${VERSION}-linux-arm64" => "branch-wrangler"
-              else
-                bin.install "branch-wrangler-${VERSION}-linux-amd64" => "branch-wrangler"
-              end
+            if OS.mac? && Hardware::CPU.arm?
+              bin.install "branch-wrangler-${VERSION}-darwin-arm64" => "branch-wrangler"
+            elsif OS.mac? && Hardware::CPU.intel?
+              bin.install "branch-wrangler-${VERSION}-darwin-amd64" => "branch-wrangler"
+            elsif OS.linux? && Hardware::CPU.arm?
+              bin.install "branch-wrangler-${VERSION}-linux-arm64" => "branch-wrangler"
+            elsif OS.linux? && Hardware::CPU.intel?
+              bin.install "branch-wrangler-${VERSION}-linux-amd64" => "branch-wrangler"
             end
           end
 
           test do
-            system "#{bin}/branch-wrangler", "--version"
+            system bin/"branch-wrangler", "--version"
           end
         end
         EOF
