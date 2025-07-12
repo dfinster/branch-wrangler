@@ -31,7 +31,7 @@ func (c *Classifier) ClassifyBranch(ctx context.Context, branch *Branch) error {
 		branch.State = DetachedHead
 		return nil
 	}
-	
+
 	if branch.TrackingRef == "" {
 		branch.State = NoUpstream
 		return nil

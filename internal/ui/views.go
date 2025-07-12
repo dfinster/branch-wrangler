@@ -58,7 +58,7 @@ func (m Model) filterView() string {
 	}
 
 	content += "\nPress f to close filter menu"
-	
+
 	return lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).
@@ -70,7 +70,7 @@ func (m Model) filterView() string {
 func (m Model) getStateColor(state git.BranchState) lipgloss.Color {
 	switch state {
 	case git.StaleLocal:
-		return lipgloss.Color("9")  // Red
+		return lipgloss.Color("9") // Red
 	case git.OpenPR:
 		return lipgloss.Color("10") // Green
 	case git.DraftPR:
@@ -82,11 +82,11 @@ func (m Model) getStateColor(state git.BranchState) lipgloss.Color {
 	case git.BehindRemote:
 		return lipgloss.Color("14") // Cyan
 	case git.Diverged:
-		return lipgloss.Color("9")  // Red
+		return lipgloss.Color("9") // Red
 	case git.InSync:
 		return lipgloss.Color("10") // Green
 	default:
-		return lipgloss.Color("7")  // White
+		return lipgloss.Color("7") // White
 	}
 }
 

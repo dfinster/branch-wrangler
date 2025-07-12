@@ -22,7 +22,7 @@ func (m Model) confirmationView() string {
 
 	content += m.confirmation.Description + "\n\n"
 	content += "Press 'y' to confirm, 'n' to cancel"
-	
+
 	return lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).

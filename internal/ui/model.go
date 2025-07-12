@@ -12,23 +12,23 @@ import (
 )
 
 type Model struct {
-	branches         []git.Branch
-	filteredBranches []git.Branch
-	selected         int
-	selectedBranches map[int]bool
-	width            int
-	height           int
-	showHelp         bool
-	showFilter       bool
+	branches          []git.Branch
+	filteredBranches  []git.Branch
+	selected          int
+	selectedBranches  map[int]bool
+	width             int
+	height            int
+	showHelp          bool
+	showFilter        bool
 	showConfirmDialog bool
-	filter           *Filter
-	searchInput      string
-	ctx              context.Context
-	classifier       *git.Classifier
-	loading          bool
-	err              error
-	lastAction       string
-	confirmation     ConfirmationMsg
+	filter            *Filter
+	searchInput       string
+	ctx               context.Context
+	classifier        *git.Classifier
+	loading           bool
+	err               error
+	lastAction        string
+	confirmation      ConfirmationMsg
 }
 
 type LoadBranchesMsg struct {
@@ -227,8 +227,8 @@ func (m Model) branchListView() string {
 	}
 
 	return lipgloss.NewStyle().
-		Width(m.width/2).
-		Height(m.height-3).
+		Width(m.width / 2).
+		Height(m.height - 3).
 		Border(lipgloss.NormalBorder()).
 		Padding(1).
 		Render(content)
@@ -261,8 +261,8 @@ func (m Model) branchDetailsView() string {
 	}
 
 	return lipgloss.NewStyle().
-		Width(m.width/2).
-		Height(m.height-3).
+		Width(m.width / 2).
+		Height(m.height - 3).
 		Border(lipgloss.NormalBorder()).
 		Padding(1).
 		Render(content)

@@ -66,18 +66,18 @@ func (s BranchState) DisplayName() string {
 }
 
 type Branch struct {
-	Name         string
-	State        BranchState
-	LastCommit   time.Time
-	Author       string
-	Ahead        int
-	Behind       int
-	TrackingRef  string
-	PRNumber     int
-	PRTitle      string
-	PRURL        string
-	IsCurrent    bool
-	CommitCount  int
+	Name          string
+	State         BranchState
+	LastCommit    time.Time
+	Author        string
+	Ahead         int
+	Behind        int
+	TrackingRef   string
+	PRNumber      int
+	PRTitle       string
+	PRURL         string
+	IsCurrent     bool
+	CommitCount   int
 	LastCommitSHA string
 }
 
