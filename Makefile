@@ -17,6 +17,11 @@ BINARY_NAME := $(APP_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)
 DIST_DIR := dist
 BUILD_DIR := build
 
+# Cross-compilation targets
+PLATFORMS := darwin/amd64 darwin/arm64 linux/amd64 linux/arm64
+BUILD_TARGETS := $(foreach platform,$(PLATFORMS),build-$(subst /,-,$(platform)))
+DIST_TARGETS := $(foreach platform,$(PLATFORMS),dist-$(subst /,-,$(platform)))
+
 # Go build flags for version injection
 LDFLAGS := -ldflags "\
 	-X github.com/dfinster/branch-wrangler/internal/version.Version=$(VERSION) \
@@ -34,7 +39,7 @@ COLOR_YELLOW := \033[33m
 COLOR_BLUE := \033[34m
 COLOR_RED := \033[31m
 
-.PHONY: help build build-dev build-release dist clean test lint fmt vet check-deps version checksums install uninstall
+.PHONY: help build build-dev build-release build-all dist dist-all clean test lint fmt vet check-deps version checksums install uninstall $(BUILD_TARGETS) $(DIST_TARGETS)
 
 # Default target
 all: build
@@ -54,8 +59,10 @@ help:
 	@echo "  clean         Clean build artifacts"
 	@echo ""
 	@echo "$(COLOR_GREEN)Release targets:$(COLOR_RESET)"
-	@echo "  build-release Build optimized release binary"
-	@echo "  dist          Build release binary with checksums"
+	@echo "  build-release Build optimized release binary (current platform)"
+	@echo "  build-all     Build release binaries for all platforms"
+	@echo "  dist          Build release binary with checksums (current platform)"
+	@echo "  dist-all      Build release binaries for all platforms with checksums"
 	@echo "  checksums     Generate checksums for existing binaries"
 	@echo ""
 	@echo "$(COLOR_GREEN)Utility targets:$(COLOR_RESET)"
@@ -99,9 +106,43 @@ build-release: check-deps
 	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO) build $(RELEASE_FLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME) $(MAIN_PATH)
 	@echo "$(COLOR_GREEN)✓ Release binary built: $(DIST_DIR)/$(BINARY_NAME)$(COLOR_RESET)"
 
+## build-all: Build release binaries for all platforms
+build-all: check-deps $(BUILD_TARGETS)
+	@echo "$(COLOR_GREEN)✓ All platform binaries built$(COLOR_RESET)"
+
+# Cross-compilation targets
+build-darwin-amd64: check-deps
+	@echo "$(COLOR_BLUE)Building Darwin AMD64 binary...$(COLOR_RESET)"
+	@mkdir -p $(DIST_DIR)
+	GOOS=darwin GOARCH=amd64 $(GO) build $(RELEASE_FLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(APP_NAME)-$(VERSION)-darwin-amd64 $(MAIN_PATH)
+	@echo "$(COLOR_GREEN)✓ Darwin AMD64 binary built$(COLOR_RESET)"
+
+build-darwin-arm64: check-deps
+	@echo "$(COLOR_BLUE)Building Darwin ARM64 binary...$(COLOR_RESET)"
+	@mkdir -p $(DIST_DIR)
+	GOOS=darwin GOARCH=arm64 $(GO) build $(RELEASE_FLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(APP_NAME)-$(VERSION)-darwin-arm64 $(MAIN_PATH)
+	@echo "$(COLOR_GREEN)✓ Darwin ARM64 binary built$(COLOR_RESET)"
+
+build-linux-amd64: check-deps
+	@echo "$(COLOR_BLUE)Building Linux AMD64 binary...$(COLOR_RESET)"
+	@mkdir -p $(DIST_DIR)
+	GOOS=linux GOARCH=amd64 $(GO) build $(RELEASE_FLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(APP_NAME)-$(VERSION)-linux-amd64 $(MAIN_PATH)
+	@echo "$(COLOR_GREEN)✓ Linux AMD64 binary built$(COLOR_RESET)"
+
+build-linux-arm64: check-deps
+	@echo "$(COLOR_BLUE)Building Linux ARM64 binary...$(COLOR_RESET)"
+	@mkdir -p $(DIST_DIR)
+	GOOS=linux GOARCH=arm64 $(GO) build $(RELEASE_FLAGS) $(LDFLAGS) -o $(DIST_DIR)/$(APP_NAME)-$(VERSION)-linux-arm64 $(MAIN_PATH)
+	@echo "$(COLOR_GREEN)✓ Linux ARM64 binary built$(COLOR_RESET)"
+
 ## dist: Build release binary and generate checksums
 dist: build-release checksums
 	@echo "$(COLOR_GREEN)✓ Distribution package ready in $(DIST_DIR)/$(COLOR_RESET)"
+	@ls -la $(DIST_DIR)/
+
+## dist-all: Build release binaries for all platforms and generate checksums
+dist-all: build-all checksums
+	@echo "$(COLOR_GREEN)✓ Multi-platform distribution package ready in $(DIST_DIR)/$(COLOR_RESET)"
 	@ls -la $(DIST_DIR)/
 
 ## checksums: Generate SHA256 checksums for binaries

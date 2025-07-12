@@ -1,0 +1,43 @@
+name: Test Homebrew Formula
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'branch-wrangler.rb'
+  pull_request:
+    paths:
+      - 'branch-wrangler.rb'
+
+jobs:
+  test-formula:
+    name: Test Homebrew Formula
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Set up Homebrew
+      run: |
+        # Ensure Homebrew is up to date
+        brew update
+    
+    - name: Validate formula syntax
+      run: |
+        # Copy formula to temporary location for testing
+        mkdir -p /tmp/homebrew-test/Formula
+        cp branch-wrangler.rb /tmp/homebrew-test/Formula/
+        
+        # Test formula syntax
+        brew audit --strict --online /tmp/homebrew-test/Formula/branch-wrangler.rb
+    
+    - name: Test formula installation (dry run)
+      run: |
+        # Test that the formula can be parsed correctly
+        brew info /tmp/homebrew-test/Formula/branch-wrangler.rb
+    
+    - name: Check formula style
+      run: |
+        # Check Ruby style
+        brew style /tmp/homebrew-test/Formula/branch-wrangler.rb
