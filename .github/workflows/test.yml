@@ -29,10 +29,11 @@ jobs:
         path: |
           ~/go/pkg/mod
           ~/.cache/go-build
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
         restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}-
           ${{ runner.os }}-go-${{ matrix.go-version }}-
-          ${{ runner.os }}-go-
+      continue-on-error: true
     
     - name: Download dependencies
       run: go mod download
