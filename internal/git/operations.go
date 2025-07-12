@@ -31,12 +31,12 @@ func (c *Client) GetCurrentBranch() (string, bool, error) {
 	if err != nil {
 		return "", true, nil
 	}
-	
+
 	branchRef := strings.TrimSpace(string(output))
 	if strings.HasPrefix(branchRef, "refs/heads/") {
 		return strings.TrimPrefix(branchRef, "refs/heads/"), false, nil
 	}
-	
+
 	return "", true, nil
 }
 
@@ -50,20 +50,20 @@ func (c *Client) ListBranches() ([]Branch, error) {
 
 	var branches []Branch
 	scanner := bufio.NewScanner(bytes.NewReader(output))
-	
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Split(line, "|")
 		if len(parts) < 5 {
 			continue
 		}
-		
+
 		name := parts[0]
 		commitDate, _ := time.Parse("2006-01-02 15:04:05 -0700", parts[1])
 		author := parts[2]
 		upstream := parts[3]
 		isCurrent := parts[4] == "*"
-		
+
 		branch := Branch{
 			Name:        name,
 			LastCommit:  commitDate,
@@ -71,7 +71,7 @@ func (c *Client) ListBranches() ([]Branch, error) {
 			TrackingRef: upstream,
 			IsCurrent:   isCurrent,
 		}
-		
+
 		if upstream != "" {
 			ahead, behind, err := c.getAheadBehind(name, upstream)
 			if err == nil {
@@ -79,15 +79,15 @@ func (c *Client) ListBranches() ([]Branch, error) {
 				branch.Behind = behind
 			}
 		}
-		
+
 		commitCount, err := c.getCommitCount(name)
 		if err == nil {
 			branch.CommitCount = commitCount
 		}
-		
+
 		branches = append(branches, branch)
 	}
-	
+
 	return branches, scanner.Err()
 }
 
@@ -98,22 +98,22 @@ func (c *Client) getAheadBehind(local, remote string) (int, int, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	
+
 	parts := strings.Fields(strings.TrimSpace(string(output)))
 	if len(parts) != 2 {
 		return 0, 0, fmt.Errorf("unexpected output format")
 	}
-	
+
 	ahead, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return 0, 0, err
 	}
-	
+
 	behind, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return 0, 0, err
 	}
-	
+
 	return ahead, behind, nil
 }
 
@@ -124,12 +124,12 @@ func (c *Client) getCommitCount(branch string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	count, err := strconv.Atoi(strings.TrimSpace(string(output)))
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return count, nil
 }
 
@@ -152,13 +152,13 @@ func (c *Client) GetRemoteURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return strings.TrimSpace(string(output)), nil
 }
 
 func (c *Client) ParseGitHubRepo(remoteURL string) (owner, repo string, err error) {
 	url := strings.TrimSpace(remoteURL)
-	
+
 	if strings.HasPrefix(url, "git@github.com:") {
 		url = strings.TrimPrefix(url, "git@github.com:")
 	} else if strings.HasPrefix(url, "https://github.com/") {
@@ -166,13 +166,13 @@ func (c *Client) ParseGitHubRepo(remoteURL string) (owner, repo string, err erro
 	} else {
 		return "", "", fmt.Errorf("not a GitHub repository URL")
 	}
-	
+
 	url = strings.TrimSuffix(url, ".git")
-	
+
 	parts := strings.Split(url, "/")
 	if len(parts) != 2 {
 		return "", "", fmt.Errorf("invalid GitHub repository format")
 	}
-	
+
 	return parts[0], parts[1], nil
 }
