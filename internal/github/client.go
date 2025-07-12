@@ -83,7 +83,7 @@ func (c *Client) GetPullRequestsForBranch(ctx context.Context, branch string) ([
 }
 
 func (c *Client) GetRateLimit(ctx context.Context) (*github.RateLimits, error) {
-	limits, _, err := c.client.RateLimits(ctx)
+	limits, _, err := c.client.RateLimit.Get(ctx)
 	return limits, err
 }
 

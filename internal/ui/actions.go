@@ -132,39 +132,3 @@ func (m Model) showUndoView() tea.Cmd {
 	}
 }
 
-func (m Model) handleBulkActions(selectedBranches []git.Branch, action string) tea.Cmd {
-	return func() tea.Msg {
-		var errors []error
-
-		for _, branch := range selectedBranches {
-			switch action {
-			case "delete":
-				if branch.State == git.StaleLocal {
-					cmd := exec.Command("git", "branch", "-d", branch.Name)
-					if err := cmd.Run(); err != nil {
-						errors = append(errors, fmt.Errorf("failed to delete %s: %w", branch.Name, err))
-					}
-				}
-			case "force-delete":
-				cmd := exec.Command("git", "branch", "-D", branch.Name)
-				if err := cmd.Run(); err != nil {
-					errors = append(errors, fmt.Errorf("failed to force delete %s: %w", branch.Name, err))
-				}
-			}
-		}
-
-		if len(errors) > 0 {
-			return ActionMsg{
-				Action: "bulk-" + action,
-				Branch: fmt.Sprintf("%d branches", len(selectedBranches)),
-				Error:  fmt.Errorf("some operations failed: %v", errors),
-			}
-		}
-
-		return ActionMsg{
-			Action: "bulk-" + action,
-			Branch: fmt.Sprintf("%d branches", len(selectedBranches)),
-			Error:  nil,
-		}
-	}
-}
