@@ -54,7 +54,7 @@ jobs:
       with:
         go-version: '1.23'
         cache: false
-    
+
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
@@ -155,17 +155,14 @@ jobs:
         # Get previous tag for changelog
         PREV_TAG=$(git tag --sort=-version:refname | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | head -2 | tail -1)
 
-        if [ -z "$PREV_TAG" ]; then
-          echo "This is the first release of Branch Wrangler."
-          CHANGELOG="## First Release\n\nInitial release of Branch Wrangler - a cross-platform TUI for Git branch management with GitHub integration."
-        else
           echo "Generating changelog from $PREV_TAG to $VERSION"
 
           # Generate changelog from git commits
-          CHANGELOG="## Changes\n\n"
+          echo "## Changes" > changelog_section.md
+          echo "" >> changelog_section.md
           while IFS= read -r commit; do
             if [[ $commit =~ ^[a-f0-9]+\ (.+)$ ]]; then
-              CHANGELOG="${CHANGELOG}- ${BASH_REMATCH[1]}\n"
+              echo "- ${BASH_REMATCH[1]}" >> changelog_section.md
             fi
           done < <(git log --oneline --no-merges ${PREV_TAG}..HEAD | head -20)
         fi
@@ -174,7 +171,9 @@ jobs:
         cat > release_notes.md << EOF
         # Branch Wrangler ${VERSION}
 
-        ${CHANGELOG}
+        EOF
+        cat changelog_section.md >> release_notes.md
+        cat >> release_notes.md << EOF
 
         ## Installation
 
@@ -311,6 +310,9 @@ jobs:
           end
         end
         EOF
+
+        # Ensure final newline
+        echo "" >> homebrew-tap/Formula/branch-wrangler.rb
 
     - name: Commit and push formula update
       run: |
