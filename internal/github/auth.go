@@ -48,9 +48,6 @@ func (a *AuthConfig) DeviceFlow(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("device flow not implemented - please set GITHUB_TOKEN environment variable")
 }
 
-func (a *AuthConfig) pollForToken(ctx context.Context, deviceCode string) (string, error) {
-	return "", fmt.Errorf("device flow not implemented")
-}
 
 func (a *AuthConfig) SaveToken(token string) error {
 	configPath, err := getConfigPath()
@@ -66,7 +63,7 @@ func (a *AuthConfig) ValidateToken(token string) error {
 		&oauth2.Token{AccessToken: token},
 	)))
 
-	_, _, err := client.RateLimits(context.Background())
+	_, _, err := client.RateLimit.Get(context.Background())
 	return err
 }
 
@@ -88,9 +85,6 @@ func getConfigPath() (string, error) {
 	return filepath.Join(appConfigDir, "config.yml"), nil
 }
 
-func readTokenFromConfig(configPath string) (string, error) {
-	return "", fmt.Errorf("config file reading not implemented yet")
-}
 
 func writeTokenToConfig(configPath, token string) error {
 	return fmt.Errorf("config file writing not implemented yet")
