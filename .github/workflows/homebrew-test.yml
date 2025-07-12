@@ -1,43 +1,40 @@
-name: Test Homebrew Formula
+name: Test Homebrew Tap
 
 on:
   workflow_dispatch:
   push:
-    paths:
-      - 'branch-wrangler.rb'
-  pull_request:
-    paths:
-      - 'branch-wrangler.rb'
+    tags:
+      - 'v*.*.*'
 
 jobs:
-  test-formula:
-    name: Test Homebrew Formula
+  test-tap:
+    name: Test Homebrew Tap Installation
     runs-on: macos-latest
     
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
     - name: Set up Homebrew
       run: |
         # Ensure Homebrew is up to date
         brew update
     
-    - name: Validate formula syntax
+    - name: Test tap and formula
       run: |
-        # Copy formula to temporary location for testing
-        mkdir -p /tmp/homebrew-test/Formula
-        cp branch-wrangler.rb /tmp/homebrew-test/Formula/
+        # Add the tap
+        brew tap dfinster/tap
         
-        # Test formula syntax
-        brew audit --strict --online /tmp/homebrew-test/Formula/branch-wrangler.rb
-    
-    - name: Test formula installation (dry run)
-      run: |
-        # Test that the formula can be parsed correctly
-        brew info /tmp/homebrew-test/Formula/branch-wrangler.rb
-    
-    - name: Check formula style
-      run: |
-        # Check Ruby style
-        brew style /tmp/homebrew-test/Formula/branch-wrangler.rb
+        # Test formula info (without installing)
+        brew info dfinster/tap/branch-wrangler
+        
+        # Validate formula
+        brew audit --strict dfinster/tap/branch-wrangler
+        
+        # Test installation
+        brew install dfinster/tap/branch-wrangler
+        
+        # Test the installed binary
+        branch-wrangler --version
+        branch-wrangler --help > /dev/null
+        
+        # Clean up
+        brew uninstall branch-wrangler
+        brew untap dfinster/tap
