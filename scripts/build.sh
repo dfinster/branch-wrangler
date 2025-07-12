@@ -93,7 +93,7 @@ get_commit_hash() {
 check_requirements() {
     print_info "Checking build requirements..."
     
-    if ! /usr/local/go/bin/go version >/dev/null 2>&1; then
+    if ! go version >/dev/null 2>&1; then
         print_error "Go is not installed or not in PATH"
         exit 1
     fi
@@ -155,7 +155,7 @@ build_binary() {
         print_info "Build command: go build ${cmd_args[*]}"
     fi
     
-    GOOS="$GOOS" GOARCH="$GOARCH" /usr/local/go/bin/go build "${cmd_args[@]}"
+    GOOS="$GOOS" GOARCH="$GOARCH" go build "${cmd_args[@]}"
     
     # Verify binary was created
     if [ ! -f "$output_path" ]; then

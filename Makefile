@@ -7,7 +7,7 @@ MAIN_PATH := ./cmd/branch-wrangler
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 COMMIT_HASH := $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
-GO := /usr/local/go/bin/go
+GO := go
 GO_VERSION := $(shell $(GO) version | cut -d' ' -f3)
 
 # Build configuration
