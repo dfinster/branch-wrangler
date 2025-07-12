@@ -2,12 +2,15 @@ name: Test Homebrew Tap
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
+    branches: [main]
 
 jobs:
   test-tap:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Test Homebrew Tap Installation
     runs-on: macos-latest
     
