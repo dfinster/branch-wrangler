@@ -48,7 +48,6 @@ func (a *AuthConfig) DeviceFlow(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("device flow not implemented - please set GITHUB_TOKEN environment variable")
 }
 
-
 func (a *AuthConfig) SaveToken(token string) error {
 	configPath, err := getConfigPath()
 	if err != nil {
@@ -84,7 +83,6 @@ func getConfigPath() (string, error) {
 
 	return filepath.Join(appConfigDir, "config.yml"), nil
 }
-
 
 func writeTokenToConfig(configPath, token string) error {
 	return fmt.Errorf("config file writing not implemented yet")
