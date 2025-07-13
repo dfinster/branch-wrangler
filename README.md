@@ -1,5 +1,7 @@
 # Branch Wrangler
 
+This is a work-in-progress, and currently not functional. Please standby.
+
 ## Project Summary
 
 Branch Wrangler is a cross-platform, full-screen terminal application (TUI) built in Go that helps manage local Git branches by reconciling them with GitHub and offers an interactive UI for cleaning up stale branches safely.
