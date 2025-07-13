@@ -10,97 +10,51 @@ The application features GitHub API integration with OAuth device flow authentic
 
 ## Installation
 
-Install on macOS or Linux with Homebrew, download the pre-built binary from the release page, or build from source. Windows users can use WSL or build from source.
+Branch Wrangler supports macOS and Linux. Multiple installation methods are available.
 
-### Install with Homebrew
+### Quick Install
 
-Homebrew installation is available for macOS (Intel and Apple Silicon) and Linux (Intel and Arm).
-
-To install Branch Wrangler with Homebrew:
-
+**Homebrew (Recommended for macOS and Linux):**
 ```bash
 brew install dfinster/tap/branch-wrangler
 ```
 
-Or alternatively:
+**Download Binary:**
+Visit the [releases page](https://github.com/dfinster/branch-wrangler/releases) and download the appropriate binary for your platform.
 
+### Verification
+
+After installation:
 ```bash
-# Add the tap first
-brew tap dfinster/tap
-
-# Then install
-brew install branch-wrangler
+branch-wrangler --version
+branch-wrangler --help
 ```
 
-After installation, you can run:
+### Comprehensive Installation Guide
 
-```bash
-  branch-wrangler --version
-  branch-wrangler --help
-```
+For detailed installation instructions, including:
+- Platform-specific requirements
+- Binary verification
+- Multiple installation methods
+- Troubleshooting
 
-## Building on macOS
+See the **[Installation Guide](docs/user/installation.md)**
 
-### Prerequisites
+### Building from Source
 
-- **Go 1.19+**: Install via [Homebrew](https://brew.sh/) or [official installer](https://golang.org/dl/)
+Linux users and developers can build from source. See the **[Building from Source Guide](docs/user/building-from-source.md)** for:
+- Complete Linux compilation instructions
+- Build system documentation
+- Cross-platform building
+- Development setup
 
-```bash
-# Using Homebrew (recommended)
-brew install go
+## Documentation
 
-# Verify installation
-go version
-```
-
-- **Git**: Pre-installed on macOS or via Homebrew
-
-```bash
-brew install git
-```
-
-### Build Instructions
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/dfinster/branch-wrangler.git
-   cd branch-wrangler
-   ```
-
-2. **Build using Make** (recommended):
-   ```bash
-   # Development build with race detection
-   make build
-
-   # Optimized release build
-   make build-release
-
-   # Build with checksums for distribution
-   make dist
-   ```
-
-3. **Alternative: Direct Go build**:
-   ```bash
-   go build -o branch-wrangler ./cmd/branch-wrangler
-   ```
-
-4. **Install system-wide** (optional):
-   ```bash
-   make install  # Installs to /usr/local/bin (requires sudo)
-   ```
-
-### Make Targets
-
-| Target               | Description                           |
-|----------------------|---------------------------------------|
-| `make help`          | Show all available targets            |
-| `make build`         | Development build with race detection |
-| `make build-release` | Optimized release build               |
-| `make test`          | Run all tests                         |
-| `make clean`         | Clean build artifacts                 |
-| `make dist`          | Build with checksums for distribution |
-| `make version`       | Show version information              |
+- **[Installation Guide](docs/user/installation.md)** - Comprehensive installation instructions for all platforms
+- **[Building from Source](docs/user/building-from-source.md)** - Complete build instructions and Linux compilation guide
+- **[Troubleshooting](docs/user/troubleshooting.md)** - Common issues and solutions
+- **[User Guide](docs/user/README.md)** - Usage instructions and features
+- **[Admin Documentation](docs/admin/README.md)** - Project status and development information
 
 ## Current Implementation Status
 
@@ -115,4 +69,4 @@ The codebase provides a solid architectural foundation with proper Go structure 
 - ⚠️ **CLI Commands**: Flags defined but not processed
 - ❌ **Testing**: No tests implemented
 
-See `docs/issues.md` for a detailed analysis of implementation gaps and estimated effort (6-8 weeks) for full compliance with requirements.
+See [Project Status](docs/admin/project-status.md) for a detailed analysis of implementation gaps and estimated effort for full compliance with requirements.
