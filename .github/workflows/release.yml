@@ -183,6 +183,16 @@ jobs:
           \`\`\`
           EOF
 
+          ## Support
+
+          - **Documentation**: [README.md](https://github.com/dfinster/branch-wrangler/blob/main/README.md)
+          - **Issues**: [GitHub Issues](https://github.com/dfinster/branch-wrangler/issues)
+          - **Discussions**: [GitHub Discussions](https://github.com/dfinster/branch-wrangler/discussions)
+
+          ---
+
+          **Full Changelog**: https://github.com/dfinster/branch-wrangler/compare/${PREV_TAG}...${VERSION}
+
           echo "release-notes-file=release_notes.md" >> $GITHUB_OUTPUT
 
       - name: Create Release
