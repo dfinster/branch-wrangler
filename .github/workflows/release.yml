@@ -165,8 +165,7 @@ jobs:
             done < <(git log --oneline --no-merges ${PREV_TAG}..HEAD | head -20)
 
           # Create full release notes
-
-          cat changelog_section.md >> release_notes.md
+          cat changelog_section.md > release_notes.md
           cat >> release_notes.md << EOF
 
           ## Installation
@@ -181,7 +180,6 @@ jobs:
           # Verify checksum (macOS)
           shasum -a 256 -c checksums.txt
           \`\`\`
-          EOF
 
           ## Support
 
@@ -192,6 +190,7 @@ jobs:
           ---
 
           **Full Changelog**: https://github.com/dfinster/branch-wrangler/compare/${PREV_TAG}...${VERSION}
+          EOF
 
           echo "release-notes-file=release_notes.md" >> $GITHUB_OUTPUT
 
