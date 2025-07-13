@@ -12,7 +12,9 @@ The application features GitHub API integration with OAuth device flow authentic
 
 Install on macOS or Linux with Homebrew, download the pre-built binary from the release page, or build from source. Windows users can use WSL or build from source.
 
-## Install with Homebrew
+### Install with Homebrew
+
+Homebrew installation is available for macOS (Intel and Apple Silicon) and Linux (Intel and Arm).
 
 To install Branch Wrangler with Homebrew:
 
@@ -29,8 +31,6 @@ brew tap dfinster/tap
 # Then install
 brew install branch-wrangler
 ```
-
-This works on both macOS (Intel and Apple Silicon) and Linux via Homebrew.
 
 After installation, you can run:
 

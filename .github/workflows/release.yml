@@ -165,29 +165,13 @@ jobs:
             done < <(git log --oneline --no-merges ${PREV_TAG}..HEAD | head -20)
 
           # Create full release notes
-          cat > release_notes.md << EOF
-          # Branch Wrangler ${VERSION}
 
-          EOF
           cat changelog_section.md >> release_notes.md
           cat >> release_notes.md << EOF
 
           ## Installation
 
-          ### macOS
-
-          1. Download the \`branch-wrangler-${VERSION}-darwin-arm64\` binary
-          2. Verify the checksum against \`checksums.txt\`
-          3. Make it executable: \`chmod +x branch-wrangler-${VERSION}-darwin-arm64\`
-          4. Move to your PATH: \`mv branch-wrangler-${VERSION}-darwin-arm64 /usr/local/bin/branch-wrangler\`
-
-          ### Build from Source
-
-          \`\`\`bash
-          git clone https://github.com/dfinster/branch-wrangler.git
-          cd branch-wrangler
-          make build-release
-          \`\`\`
+          See the [README](https://github.com/dfinster/branch-wrangler?tab=readme-ov-file#installation) for detailed installation instructions.
 
           ## Verification
 
