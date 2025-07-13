@@ -3,8 +3,26 @@ name: Test
 on:
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'cmd/**'
+      - 'internal/**'
+      - 'pkg/**'
+      - '.github/workflows/test.yml'
   push:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'cmd/**'
+      - 'internal/**'
+      - 'pkg/**'
+      - '.github/workflows/test.yml'
 
 jobs:
   test:
